@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dema — ma journée</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Karla:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --paper:#FAF7F2; --surface:#FFFFFF; --surface-2:#F2EDE5; --surface-3:#E9E2D7;
+  --line:#E3DACE; --line-strong:#C9BCA9;
+  --ink:#241C18; --ink-2:#5A4C43; --ink-3:#8B7B6E;
+  --accent:#A3123C; --accent-soft:#F7E3E9; --on-accent:#FFFFFF;
+  --good:#1F6B4A; --good-soft:#E2F0E9;
+  --warn:#9A5B06; --warn-soft:#FBEBD5;
+  --display:"Archivo",ui-sans-serif,system-ui,sans-serif;
+  --body:"Karla",ui-sans-serif,system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#15120F; --surface:#1E1A16; --surface-2:#272119; --surface-3:#322A21;
+  --line:#352D24; --line-strong:#4B4035;
+  --ink:#F3EDE5; --ink-2:#C3B6A8; --ink-3:#95877A;
+  --accent:#F2839F; --accent-soft:#3A1722; --on-accent:#1B0A11;
+  --good:#6FCFA2; --good-soft:#12291F;
+  --warn:#E5A851; --warn-soft:#2E2113;
+  color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px}
+.top{border-bottom:1px solid var(--line);padding-block:14px 12px}
+.brand{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.01em}
+.brand span{color:var(--accent)}
+.when{font-size:12px;color:var(--ink-3);margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:14px}
+.eyebrow{font-family:var(--display);font-size:10.5px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+h1,h2{font-family:var(--display);font-weight:700;letter-spacing:-.015em;margin:0 0 4px;text-wrap:balance}
+h1{font-size:21px} h2{font-size:17px}
+.sub{font-size:13px;color:var(--ink-2);margin:0}
+.note{font-size:12px;color:var(--ink-3);margin:10px 0 0}
+.lab{display:block;font-size:12.5px;color:var(--ink-2);margin-top:12px}
+.lab input{display:block;width:100%;margin-top:5px;padding:12px;border:1.5px solid var(--line);
+  border-radius:10px;background:var(--surface);color:var(--ink);font:inherit}
+.lab input:focus{outline:none;border-color:var(--accent)}
+.btn{display:block;width:100%;margin-top:14px;padding:13px;border:0;border-radius:10px;
+  background:var(--accent);color:var(--on-accent);font-family:var(--display);font-weight:600;
+  font-size:15px;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:none;color:var(--ink-2);border:1.5px solid var(--line)}
+.btn.sm{padding:9px;font-size:13.5px;margin-top:8px}
+/* barre de navigation : jour et entreprise */
+.bar{display:flex;align-items:center;gap:8px;margin-top:12px}
+.bar .day{flex:1;text-align:center;font-family:var(--display);font-weight:600;font-size:14px}
+.nav{width:38px;height:38px;flex:none;border:1.5px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:17px;cursor:pointer;line-height:1}
+.nav:disabled{opacity:.3;cursor:not-allowed}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1.5px solid var(--line);border-radius:999px;padding:6px 13px;font-size:13px;
+  background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:var(--body)}
+.chip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+/* onglets */
+.tabs{display:flex;gap:0;margin-top:14px;border-bottom:1px solid var(--line)}
+.tab{flex:1;padding:11px 4px;border:0;background:none;color:var(--ink-3);font-family:var(--display);
+  font-weight:600;font-size:13px;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.tab b{display:block;font-size:17px;line-height:1.2}
+/* cuisine */
+.plat{display:flex;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.plat:last-child{border-bottom:0;padding-bottom:0}
+.qte{font-family:var(--display);font-weight:700;font-size:26px;line-height:1;color:var(--accent);
+  min-width:46px;text-align:right;flex:none;font-variant-numeric:tabular-nums}
+.plat .nm{font-size:14.5px;overflow-wrap:break-word;min-width:0}
+.plat .lim{display:block;font-size:11.5px;color:var(--warn)}
+.sitehead{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink-3);margin:18px 0 0}
+.sitehead:first-child{margin-top:0}
+.rub{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+  margin:14px 0 2px;font-family:var(--display);font-weight:600}
+/* tuiles */
+.tiles{display:flex;gap:9px;margin-top:4px}
+.tile{flex:1;background:var(--surface-2);border-radius:10px;padding:12px 11px}
+.tile i{display:block;font-style:normal;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-3);font-family:var(--display);font-weight:600}
+.tile b{display:block;font-family:var(--display);font-size:19px;margin-top:3px;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.tile.du b{color:var(--accent)}
+.tile.ok b{color:var(--good)}
+/* lignes nommées */
+.row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .who{flex:1;min-width:0}
+.row .who b{display:block;font-size:14.5px;font-weight:600;overflow-wrap:break-word}
+.row .who span{display:block;font-size:12px;color:var(--ink-3);overflow-wrap:break-word}
+.row .amt{font-family:var(--display);font-weight:700;font-size:15px;flex:none;
+  font-variant-numeric:tabular-nums}
+.row .amt.du{color:var(--accent)} .row .amt.ok{color:var(--good)}
+.act{flex:none;border:1.5px solid var(--line);border-radius:9px;background:var(--surface);
+  color:var(--ink-2);font-size:12px;padding:7px 10px;text-decoration:none;cursor:pointer;
+  font-family:var(--body);white-space:nowrap}
+.tag{display:inline-block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  font-family:var(--display);font-weight:600;padding:2px 7px;border-radius:999px;
+  background:var(--surface-3);color:var(--ink-3);margin-left:6px}
+.vide{font-size:13.5px;color:var(--ink-3);padding:16px 0;text-align:center}
+.err{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);
+  border-radius:10px;padding:11px 13px;font-size:13px;margin-top:12px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(14px);
+  background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-size:13px;
+  opacity:0;pointer-events:none;transition:.18s;max-width:90vw;text-align:center;z-index:9}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.shot{display:block;max-width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">Dema <span>·</span> ma journée</div>
+    <div class="when" id="when">Chargement…</div>
+  </div>
+
+  <div id="err-box"></div>
+
+  <!-- connexion -->
+  <div class="card" id="s-login" hidden>
+    <p class="eyebrow">Accès traiteur</p>
+    <h1>Se connecter</h1>
+    <p class="sub">Cet écran montre les noms et l'argent. Il demande un compte.</p>
+    <label class="lab" for="mail">Adresse e-mail<input type="email" id="mail" autocomplete="username" inputmode="email"></label>
+    <label class="lab" for="mdp">Mot de passe<input type="password" id="mdp" autocomplete="current-password"></label>
+    <button class="btn" id="go-login">Entrer</button>
+  </div>
+
+  <!-- tableau -->
+  <div id="s-tab" hidden>
+    <div class="bar">
+      <button class="nav" id="go-hier" aria-label="Jour précédent">‹</button>
+      <div class="day" id="jour">—</div>
+      <button class="nav" id="go-demain" aria-label="Jour suivant">›</button>
+    </div>
+    <div class="chips" id="chips"></div>
+
+    <div class="tabs">
+      <button class="tab on" data-v="cuisine">À préparer<b id="n-cuisine">—</b></button>
+      <button class="tab" data-v="argent">Encaissé<b id="n-argent">—</b></button>
+      <button class="tab" data-v="monde">Impayés<b id="n-monde">—</b></button>
+    </div>
+
+    <div class="card" id="v-cuisine"></div>
+    <div id="v-argent" hidden></div>
+    <div id="v-monde" hidden></div>
+
+    <button class="btn ghost sm" id="go-out">Se déconnecter</button>
+  </div>
+
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ===================================================================
+   CONFIGURATION — les deux mêmes lignes que la page employé
+   =================================================================== */
+var CONFIG = {
+  url: "https://fiqrfrcsgxqvqjgvzasr.supabase.co",
+  cle: "sb_publishable_yAowOWU05DlJ_xQXU0vQ0A_bk6O23ht"
+};
+/* =================================================================== */
+
+(function(){
+  "use strict";
+  var $ = function(i){ return document.getElementById(i); };
+  var fcfa = function(n){ return (n||0).toLocaleString("fr-FR").replace(/ | /g," ") + " F"; };
+  var pre  = function(n){ return String(n||"").split(" ")[0]; };
+
+  /* ---------- session ---------- */
+  // La clé publique ci-dessus ne donne accès à rien de cet écran : le serveur
+  // exige un compte connecté ET rattaché à un traiteur. Le jeton de session est
+  // gardé sur l'appareil pour ne pas redemander le mot de passe chaque matin.
+  var JETON = null, RAFRAICHIR = null;
+  function lire(){
+    try {
+      JETON = localStorage.getItem("dema_jeton");
+      RAFRAICHIR = localStorage.getItem("dema_rafraichir");
+    } catch(e){}
+  }
+  function garder(d){
+    JETON = d.access_token; RAFRAICHIR = d.refresh_token;
+    try {
+      localStorage.setItem("dema_jeton", JETON);
+      localStorage.setItem("dema_rafraichir", RAFRAICHIR || "");
+    } catch(e){}
+  }
+  function oublier(){
+    JETON = null; RAFRAICHIR = null;
+    try { localStorage.removeItem("dema_jeton"); localStorage.removeItem("dema_rafraichir"); } catch(e){}
+  }
+
+  var tT = null;
+  function toast(t){
+    var el = $("toast"); el.textContent = t; el.classList.add("on");
+    clearTimeout(tT); tT = setTimeout(function(){ el.classList.remove("on"); }, 2600);
+  }
+  function erreur(m){
+    var b = $("err-box"); b.innerHTML = "";
+    if(!m) return;
+    var d = document.createElement("div"); d.className = "err"; d.textContent = m; b.appendChild(d);
+  }
+  function ecran(n){
+    ["login","tab"].forEach(function(k){ $("s-"+k).hidden = (k !== n); });
+    window.scrollTo(0,0);
+  }
+
+  function connexion(mail, mdp){
+    return fetch(CONFIG.url + "/auth/v1/token?grant_type=password", {
+      method:"POST",
+      headers:{ "apikey": CONFIG.cle, "Content-Type":"application/json" },
+      body: JSON.stringify({ email: mail, password: mdp })
+    }).then(function(r){
+      return r.json().then(function(d){
+        if(!r.ok) throw new Error(d.error_description || d.msg || d.message || "Connexion refusée");
+        if(!d.access_token) throw new Error("Réponse inattendue du serveur");
+        garder(d); return d;
+      });
+    });
+  }
+  function rafraichir(){
+    if(!RAFRAICHIR) return Promise.reject(new Error("session expirée"));
+    return fetch(CONFIG.url + "/auth/v1/token?grant_type=refresh_token", {
+      method:"POST",
+      headers:{ "apikey": CONFIG.cle, "Content-Type":"application/json" },
+      body: JSON.stringify({ refresh_token: RAFRAICHIR })
+    }).then(function(r){
+      return r.json().then(function(d){
+        if(!r.ok || !d.access_token) throw new Error("session expirée");
+        garder(d); return d;
+      });
+    });
+  }
+
+  // Un appel protégé. Si le jeton a expiré pendant la nuit, on le renouvelle une
+  // fois en silence plutôt que de la renvoyer au mot de passe.
+  function rpc(fn, args, reessai){
+    return fetch(CONFIG.url + "/rest/v1/rpc/" + fn, {
+      method:"POST",
+      headers:{ "apikey": CONFIG.cle, "Authorization":"Bearer " + JETON,
+                "Content-Type":"application/json" },
+      body: JSON.stringify(args || {})
+    }).then(function(r){
+      if((r.status === 401 || r.status === 403) && !reessai && RAFRAICHIR)
+        return rafraichir().then(function(){ return rpc(fn, args, true); });
+      return r.text().then(function(txt){
+        var d = null;
+        try { d = txt ? JSON.parse(txt) : null; } catch(e){ d = txt; }
+        if(!r.ok){
+          var m = String((d && (d.message || d.hint || d.details)) || ("Erreur " + r.status))
+                    .replace(/^(ERREUR|ERROR):\s*/i, "");
+          throw new Error(m);
+        }
+        return d;
+      });
+    });
+  }
+
+  /* ---------- état ---------- */
+  var DATA = null, JOUR = null, SITE = null, VUE = "cuisine";
+
+  function dateFr(iso){
+    return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR",
+      { weekday:"long", day:"numeric", month:"long" });
+  }
+  function aujourdhui(){
+    // l'heure de Dakar, pas celle du téléphone s'il voyage
+    var d = new Date(new Date().toLocaleString("en-US", { timeZone:"Africa/Dakar" }));
+    return d.toISOString().slice(0,10);
+  }
+  function decale(iso, n){
+    var d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0,10);
+  }
+
+  function charger(){
+    erreur(null);
+    $("when").textContent = "Chargement…";
+    return rpc("fn_tableau", { p_jour: JOUR, p_site: SITE }).then(function(d){
+      DATA = d; JOUR = d.jour;
+      rendre();
+      ecran("tab");
+    }).catch(function(e){
+      if(/session expirée/i.test(e.message)){ oublier(); demarrer(); return; }
+      $("when").textContent = "—";
+      erreur(e.message);
+      if(!DATA) ecran("login");
+    });
+  }
+
+  /* ---------- rendu ---------- */
+  function rendre(){
+    var d = DATA;
+    $("when").textContent = d.traiteur;
+    $("jour").textContent = dateFr(d.jour) + (d.jour === aujourdhui() ? " · aujourd'hui" : "");
+    $("go-demain").disabled = d.jour >= aujourdhui();
+
+    // entreprises
+    var ch = $("chips"); ch.innerHTML = "";
+    var faire = function(lib, slug){
+      var b = document.createElement("button");
+      b.className = "chip" + (SITE === slug ? " on" : "");
+      b.textContent = lib;
+      b.addEventListener("click", function(){ SITE = slug; charger(); });
+      ch.appendChild(b);
+    };
+    SITE = d.filtre || null;
+    if((d.sites||[]).length > 1) faire("Toutes", null);
+    (d.sites||[]).forEach(function(s){ faire(s.nom + " · " + s.commandes, s.slug); });
+
+    // le total vient du serveur : il ne porte que sur ce qui est affiché
+    var tot = d.total || { commandes:0, du:0, encaisse:0, reste:0 };
+    var plats = 0;
+    (d.cuisine||[]).forEach(function(c){ (c.rubriques||[]).forEach(function(r){
+      (r.articles||[]).forEach(function(a){ plats += a.quantite; }); }); });
+
+    $("n-cuisine").textContent = plats;
+    $("n-argent").textContent = fcfa(tot.encaisse);
+    $("n-monde").textContent = (d.manquants||[]).length;
+
+    cuisine(d); argent(d, tot); monde(d);
+    ["cuisine","argent","monde"].forEach(function(v){
+      $("v-"+v).hidden = (v !== VUE);
+      var t = document.querySelector('.tab[data-v="'+v+'"]');
+      if(t) t.classList.toggle("on", v === VUE);
+    });
+  }
+
+  function cuisine(d){
+    var box = $("v-cuisine"); box.innerHTML = "";
+    if(!(d.cuisine||[]).length){
+      box.innerHTML = '<p class="vide">Aucune commande pour ce jour.</p>'; return;
+    }
+    d.cuisine.forEach(function(c){
+      if(d.cuisine.length > 1 || (d.sites||[]).length > 1){
+        var h = document.createElement("p"); h.className = "sitehead"; h.textContent = c.site;
+        box.appendChild(h);
+      }
+      (c.rubriques||[]).forEach(function(r){
+        var t = document.createElement("p"); t.className = "rub"; t.textContent = r.nom;
+        box.appendChild(t);
+        (r.articles||[]).forEach(function(a){
+          var li = document.createElement("div"); li.className = "plat";
+          var q = document.createElement("div"); q.className = "qte"; q.textContent = a.quantite;
+          var n = document.createElement("div"); n.className = "nm"; n.textContent = a.nom;
+          if(a.limite){
+            var l = document.createElement("span"); l.className = "lim";
+            l.textContent = a.quantite >= a.limite
+              ? "limite atteinte (" + a.limite + ")"
+              : "limite " + a.limite + " · reste " + (a.limite - a.quantite);
+            n.appendChild(l);
+          }
+          li.appendChild(q); li.appendChild(n); box.appendChild(li);
+        });
+      });
+    });
+  }
+
+  function argent(d, tot){
+    var box = $("v-argent"); box.innerHTML = "";
+    var c1 = document.createElement("div"); c1.className = "card";
+    c1.innerHTML = '<p class="eyebrow">La journée</p><div class="tiles">'
+      + '<div class="tile"><i>Commandé</i><b></b></div>'
+      + '<div class="tile ok"><i>Encaissé</i><b></b></div>'
+      + '<div class="tile du"><i>Reste</i><b></b></div></div>';
+    var bs = c1.querySelectorAll(".tile b");
+    bs[0].textContent = fcfa(tot.du); bs[1].textContent = fcfa(tot.encaisse);
+    bs[2].textContent = fcfa(tot.reste);
+    box.appendChild(c1);
+
+    var c2 = document.createElement("div"); c2.className = "card";
+    var e = document.createElement("p"); e.className = "eyebrow";
+    e.textContent = "Par moyen de paiement"; c2.appendChild(e);
+    if(!(d.canaux||[]).length){
+      c2.innerHTML += '<p class="vide">Rien d\'encaissé pour l\'instant.</p>';
+    } else {
+      d.canaux.forEach(function(k){
+        var r = document.createElement("div"); r.className = "row";
+        var w = document.createElement("div"); w.className = "who";
+        w.innerHTML = "<b></b><span></span>";
+        w.children[0].textContent = k.canal;
+        w.children[1].textContent = k.nb + (k.nb > 1 ? " règlements" : " règlement");
+        var a = document.createElement("div"); a.className = "amt ok"; a.textContent = fcfa(k.encaisse);
+        r.appendChild(w); r.appendChild(a); c2.appendChild(r);
+      });
+      var n = document.createElement("p"); n.className = "note";
+      n.textContent = "À rapprocher de tes relevés Wave, Orange Money et Mix.";
+      c2.appendChild(n);
+    }
+    box.appendChild(c2);
+
+    // les règlements déclarés, avec la capture si elle existe
+    var c3 = document.createElement("div"); c3.className = "card";
+    var e3 = document.createElement("p"); e3.className = "eyebrow";
+    e3.textContent = "Règlements déclarés (" + (d.paiements||[]).length + ")";
+    c3.appendChild(e3);
+    if(!(d.paiements||[]).length){
+      c3.innerHTML += '<p class="vide">Aucun règlement déclaré.</p>';
+    } else {
+      d.paiements.forEach(function(p){
+        var r = document.createElement("div"); r.className = "row";
+        var w = document.createElement("div"); w.className = "who";
+        w.innerHTML = "<b></b><span></span>";
+        w.children[0].textContent = p.qui;
+        var det = p.moyen + " · " + p.heure;
+        if((d.sites||[]).length > 1) det = p.site + " · " + det;
+        if((p.pour||[]).length) det += " · pour " + p.pour.map(pre).join(", ");
+        w.children[1].textContent = det;
+        var a = document.createElement("div"); a.className = "amt ok"; a.textContent = fcfa(p.montant);
+        r.appendChild(w); r.appendChild(a);
+        if(p.preuve){
+          var b = document.createElement("button"); b.className = "act"; b.textContent = "Capture";
+          b.addEventListener("click", function(){ voirCapture(p.preuve, r, b); });
+          r.appendChild(b);
+        }
+        c3.appendChild(r);
+      });
+    }
+    box.appendChild(c3);
+  }
+
+  function monde(d){
+    var box = $("v-monde"); box.innerHTML = "";
+    var c = document.createElement("div"); c.className = "card";
+    var e = document.createElement("p"); e.className = "eyebrow";
+    e.textContent = "Pas encore réglé (" + (d.manquants||[]).length + ")";
+    c.appendChild(e);
+    if(!(d.manquants||[]).length){
+      c.innerHTML += '<p class="vide">Tout le monde a réglé. 🎉</p>'.replace(" 🎉","");
+    } else {
+      d.manquants.forEach(function(m){
+        var r = document.createElement("div"); r.className = "row";
+        var w = document.createElement("div"); w.className = "who";
+        w.innerHTML = "<b></b><span></span>";
+        w.children[0].textContent = m.nom;
+        w.children[1].textContent = ((d.sites||[]).length > 1 ? m.site + " · " : "") + (m.detail || "—");
+        var a = document.createElement("div"); a.className = "amt du"; a.textContent = fcfa(m.reste);
+        r.appendChild(w); r.appendChild(a);
+        if(m.tel){
+          // la relance qu'elle fait déjà à la main, en un geste
+          var num = String(m.tel).replace(/\D/g,"");
+          if(num.length === 9) num = "221" + num;
+          var txt = "Bonjour " + pre(m.nom) + ", ta commande du jour ("
+                  + (m.detail || "déjeuner") + ", " + fcfa(m.reste) + ") n'est pas encore réglée.";
+          var lien = document.createElement("a"); lien.className = "act";
+          lien.href = "https://wa.me/" + num + "?text=" + encodeURIComponent(txt);
+          lien.target = "_blank"; lien.rel = "noopener";
+          lien.textContent = "Relancer";
+          r.appendChild(lien);
+        }
+        c.appendChild(r);
+      });
+      var n = document.createElement("p"); n.className = "note";
+      n.textContent = "« Relancer » ouvre WhatsApp avec le message déjà écrit.";
+      c.appendChild(n);
+    }
+    box.appendChild(c);
+
+    if((d.doublons||[]).length){
+      var c2 = document.createElement("div"); c2.className = "card";
+      var e2 = document.createElement("p"); e2.className = "eyebrow";
+      e2.textContent = "Noms qui se ressemblent"; c2.appendChild(e2);
+      var s = document.createElement("p"); s.className = "sub";
+      s.textContent = "Peut-être la même personne inscrite deux fois. Rien n'est fusionné sans toi.";
+      c2.appendChild(s);
+      d.doublons.forEach(function(x){
+        var r = document.createElement("div"); r.className = "row";
+        var w = document.createElement("div"); w.className = "who";
+        w.innerHTML = "<b></b><span></span>";
+        w.children[0].textContent = x.a + "  /  " + x.b;
+        w.children[1].textContent = x.site;
+        r.appendChild(w); c2.appendChild(r);
+      });
+      box.appendChild(c2);
+    }
+  }
+
+  // La capture n'est pas publique : on demande au serveur un lien signé, valable
+  // cinq minutes, et on l'affiche sous la ligne.
+  function voirCapture(chemin, ligne, bouton){
+    var deja = ligne.parentNode.querySelector('img[data-src="'+chemin+'"]');
+    if(deja){ deja.remove(); bouton.textContent = "Capture"; return; }
+    bouton.textContent = "…";
+    fetch(CONFIG.url + "/storage/v1/object/sign/preuves/" + chemin, {
+      method:"POST",
+      headers:{ "apikey": CONFIG.cle, "Authorization":"Bearer " + JETON,
+                "Content-Type":"application/json" },
+      body: JSON.stringify({ expiresIn: 300 })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if(!d.signedURL && !d.signedUrl) throw new Error("introuvable");
+      var img = document.createElement("img"); img.className = "shot";
+      img.setAttribute("data-src", chemin);
+      img.src = CONFIG.url + "/storage/v1" + (d.signedURL || d.signedUrl);
+      img.alt = "Capture du paiement";
+      ligne.parentNode.insertBefore(img, ligne.nextSibling);
+      bouton.textContent = "Masquer";
+    }).catch(function(){
+      bouton.textContent = "Capture"; toast("Capture introuvable");
+    });
+  }
+
+  /* ---------- actions ---------- */
+  $("go-login").addEventListener("click", function(){
+    var m = $("mail").value.trim(), p = $("mdp").value;
+    if(!m || !p){ toast("Adresse et mot de passe"); return; }
+    erreur(null); this.disabled = true; this.textContent = "Connexion…";
+    var self = this;
+    connexion(m, p).then(function(){ $("mdp").value = ""; JOUR = null; return charger(); })
+      .catch(function(e){ erreur(e.message); })
+      .then(function(){ self.disabled = false; self.textContent = "Entrer"; });
+  });
+  $("go-out").addEventListener("click", function(){
+    oublier(); DATA = null; SITE = null; JOUR = null; ecran("login"); $("when").textContent = "—";
+  });
+  $("go-hier").addEventListener("click", function(){ JOUR = decale(DATA.jour, -1); charger(); });
+  $("go-demain").addEventListener("click", function(){ JOUR = decale(DATA.jour, 1); charger(); });
+  Array.prototype.forEach.call(document.querySelectorAll(".tab"), function(t){
+    t.addEventListener("click", function(){ VUE = t.getAttribute("data-v"); rendre(); });
+  });
+
+  function demarrer(){
+    lire();
+    if(!JETON){ ecran("login"); $("when").textContent = "—"; return; }
+    charger();
+  }
+  demarrer();
+})();
+</script>
+</body>
+</html>

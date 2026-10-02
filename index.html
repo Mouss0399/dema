@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dema Traiteur — commander</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Karla:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --paper:#FAF7F2; --surface:#FFFFFF; --surface-2:#F2EDE5; --surface-3:#E9E2D7;
+  --line:#E3DACE; --line-strong:#C9BCA9;
+  --ink:#241C18; --ink-2:#5A4C43; --ink-3:#8B7B6E;
+  --accent:#A3123C; --accent-soft:#F7E3E9; --on-accent:#FFFFFF;
+  --good:#1F6B4A; --good-soft:#E2F0E9;
+  --warn:#9A5B06; --warn-soft:#FBEBD5;
+  --display:"Archivo",ui-sans-serif,system-ui,sans-serif;
+  --body:"Karla",ui-sans-serif,system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#15120F; --surface:#1E1A16; --surface-2:#272119; --surface-3:#322A21;
+  --line:#352D24; --line-strong:#4B4035;
+  --ink:#F3EDE5; --ink-2:#C3B6A8; --ink-3:#95877A;
+  --accent:#F2839F; --accent-soft:#3A1722; --on-accent:#1B0A11;
+  --good:#6FCFA2; --good-soft:#12291F;
+  --warn:#E5A851; --warn-soft:#2E2113;
+  color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:430px;margin:0 auto;padding-inline:16px}
+.top{border-bottom:1px solid var(--line);padding-block:14px 12px;margin-bottom:4px}
+.brand{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.01em}
+.brand span{color:var(--accent)}
+.when{font-size:12px;color:var(--ink-3);margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:14px}
+.eyebrow{font-family:var(--display);font-size:10.5px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+h1,h2{font-family:var(--display);font-weight:700;letter-spacing:-.015em;margin:0 0 4px;text-wrap:balance}
+h1{font-size:21px} h2{font-size:18px}
+.sub{font-size:13px;color:var(--ink-2);margin:0}
+.social{display:flex;align-items:center;gap:10px;margin-top:14px;padding:11px 13px;
+  background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px}
+.social b{font-family:var(--display);font-size:20px;color:var(--accent);line-height:1}
+.social span{font-size:12.5px;color:var(--ink-2)}
+.opts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.opt{display:flex;align-items:center;gap:11px;background:var(--surface);
+  border:1.5px solid var(--line);border-radius:10px;padding:11px 12px}
+.opt.on{border-color:var(--accent);background:var(--accent-soft)}
+.opt.epuise{opacity:.55}
+.hit{display:flex;align-items:center;gap:11px;flex:1;min-width:0;cursor:pointer;background:none;
+  border:0;padding:4px 0;font-family:var(--body);font-size:15px;color:inherit;text-align:left}
+.hit:disabled{cursor:not-allowed}
+.hit:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.box{width:19px;height:19px;border-radius:6px;border:1.5px solid var(--line-strong);flex:none;position:relative}
+.box.round{border-radius:50%}
+.opt.on .box{border-color:var(--accent);background:var(--accent)}
+.opt.on .box::after{content:"";position:absolute;left:5.5px;top:2.5px;width:5px;height:9px;
+  border:solid var(--on-accent);border-width:0 2px 2px 0;transform:rotate(42deg)}
+.opt.on .box.round::after{content:"";position:absolute;inset:3.5px;left:3.5px;top:3.5px;width:auto;height:auto;
+  border:0;border-radius:50%;background:var(--on-accent);transform:none}
+.nmwrap{flex:1;min-width:0}
+.nm{font-weight:500;overflow-wrap:anywhere}
+.who2{font-size:11.5px;color:var(--ink-3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cnt{flex:none;font-family:var(--display);font-size:12px;font-weight:700;color:var(--accent);
+  background:var(--accent-soft);border-radius:20px;padding:3px 9px;font-variant-numeric:tabular-nums}
+.opt.on .cnt{background:var(--surface)}
+.pr{flex:none;font-variant-numeric:tabular-nums;font-weight:600;font-size:13.5px;color:var(--ink-2)}
+.tag{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  padding:3px 7px;border-radius:5px}
+.tag.free{color:var(--good);background:var(--good-soft)}
+.tag.reste{color:var(--warn);background:var(--warn-soft)}
+.tag.out{color:var(--ink-3);background:var(--surface-3)}
+.step{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:9px;overflow:hidden;flex:none}
+.step button{appearance:none;background:var(--surface);border:0;color:var(--ink);width:34px;height:32px;
+  font-size:17px;line-height:1;cursor:pointer;font-family:var(--body)}
+.step button:disabled{opacity:.35;cursor:not-allowed}
+.step .q{min-width:28px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;font-size:14px}
+.phead{display:flex;align-items:center;gap:10px}
+.ptog{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;
+  cursor:pointer;font-family:var(--body);color:inherit;text-align:left}
+.ptxt{flex:1;min-width:0}
+.pname{display:block;font-family:var(--display);font-size:17px;font-weight:700;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.psum{display:block;font-size:12px;color:var(--ink-3);margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.psum.manque{color:var(--warn);font-weight:600}
+.caret{flex:none;width:9px;height:9px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);
+  transform:rotate(45deg);margin-top:-4px}
+.caret.up{transform:rotate(-135deg);margin-top:3px}
+.ptot{flex:none;font-family:var(--display);font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.rubblk{margin-top:15px;padding-top:13px;border-top:1px solid var(--line)}
+.rubhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{appearance:none;font-family:var(--body);font-size:12.5px;cursor:pointer;border:1.5px solid var(--line);
+  background:var(--surface);color:var(--ink-2);border-radius:20px;padding:6px 11px}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.total{display:flex;align-items:baseline;justify-content:space-between;margin-top:16px;
+  padding-top:14px;border-top:1px solid var(--line)}
+.total .t1{font-size:13px;color:var(--ink-2)}
+.total .t2{font-family:var(--display);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.btn{display:block;width:100%;margin-top:12px;appearance:none;border:0;border-radius:10px;
+  background:var(--accent);color:var(--on-accent);font-family:var(--display);font-weight:600;
+  font-size:15px;padding:14px;cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.ghost{background:none;color:var(--ink-2);border:1.5px solid var(--line);font-weight:500}
+.btn.sm{font-size:13.5px;padding:10px;margin-top:9px}
+.lab{display:block;margin-top:12px;font-size:13px;color:var(--ink-2)}
+.lab input{display:block;width:100%;margin-top:6px;padding:11px 12px;font-size:15px;color:var(--ink);
+  border:1.5px solid var(--line);border-radius:9px;background:var(--surface);font-family:var(--body)}
+.lab input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.sugg{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.sgi{display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;
+  border:1.5px solid var(--line);background:var(--surface-2);border-radius:9px;padding:10px 12px;
+  font-family:var(--body);font-size:14px;color:var(--ink)}
+.sgi .sgn{flex:1;min-width:0;font-weight:600}
+.sgi .sgt{flex:none;font-size:11px;color:var(--ink-3)}
+.pay{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:12px}
+.pay .cap{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.pay .num{font-family:var(--display);font-weight:600;font-size:17px;font-variant-numeric:tabular-nums}
+.copy{appearance:none;border:1.5px solid var(--line-strong);background:var(--surface);color:var(--ink);
+  border-radius:8px;padding:8px 11px;font-family:var(--body);font-size:12.5px;cursor:pointer;flex:none}
+.done{text-align:center;padding:8px 0 2px}
+.tick{width:50px;height:50px;margin:0 auto 12px;border-radius:50%;background:var(--good-soft);display:grid;place-items:center}
+.tick svg{width:25px;height:25px;stroke:var(--good);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.tick.wait{background:var(--warn-soft)} .tick.wait svg{stroke:var(--warn)}
+.recap{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:7px;text-align:left}
+.recap div{display:flex;justify-content:space-between;gap:12px;font-size:13.5px}
+.recap span:first-child{color:var(--ink-2)}
+.recap span:last-child{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.err{margin-top:12px;padding:11px 13px;border-radius:9px;background:var(--accent-soft);
+  border:1px solid var(--accent);color:var(--accent);font-size:13px}
+.note{font-size:11.5px;color:var(--ink-3);line-height:1.55;margin-top:14px;
+  border-top:1px solid var(--line);padding-top:12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  background:var(--ink);color:var(--paper);font-size:13px;padding:10px 16px;border-radius:24px;z-index:50;
+  opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  .opt-tag{font-weight:400;opacity:.6;text-transform:none;letter-spacing:0}
+  .drop{border:1px dashed #d8d2c6;border-radius:14px;padding:14px;margin:10px 0 14px}
+  .drop .btn{margin:0 8px 0 0;display:inline-block;width:auto}
+  .drop .note{margin:10px 0 0}
+  #apercu{display:block;max-width:100%;border-radius:10px;margin-top:10px}
+  #apercu[hidden]{display:none}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Dema <span>Traiteur</span></div>
+    <div class="when" id="when">Chargement…</div>
+  </div>
+
+  <div id="erreur" class="err" hidden></div>
+
+  <!-- inscription -->
+  <div class="card" id="s-who" hidden>
+    <p class="eyebrow">Première fois sur ce téléphone</p>
+    <h1>Bienvenue</h1>
+    <p class="sub">Écris ton nom une fois. Ce téléphone s'en souvient ensuite.</p>
+    <p class="note" id="who-note" hidden></p>
+    <label class="lab" for="nom">Ton nom<input type="text" id="nom" placeholder="Prénom et nom" autocomplete="name"></label>
+    <div class="sugg" id="suggest"></div>
+    <label class="lab" for="tel">Ton numéro <span style="color:var(--ink-3)">(facultatif)</span><input type="tel" id="tel" placeholder="77 000 00 00" autocomplete="tel"></label>
+    <button class="btn" id="go-inscrire">C'est parti</button>
+    <p class="note">Sert uniquement à te joindre s'il manque un règlement. Aucun mot de passe, aucun compte.</p>
+  </div>
+
+  <!-- commande -->
+  <div id="s-order" hidden>
+    <div class="card">
+      <p class="eyebrow" id="menuday">Menu du jour</p>
+      <h1>Bonjour <span id="hello"></span></h1>
+      <p class="sub" id="cloture"></p>
+      <div class="social" id="social" hidden><b></b><span></span></div>
+    </div>
+    <div id="paniers"></div>
+    <div class="card">
+      <p class="eyebrow">Commander pour quelqu'un d'autre</p>
+      <p class="sub">Chacun choisit son propre plat. Tu régleras le tout ensemble.</p>
+      <label class="lab" for="invite">Prénom et nom<input type="text" id="invite" placeholder="Un collègue, un invité"></label>
+      <button class="btn ghost sm" id="go-invite">Ajouter sa commande</button>
+      <div class="total"><div class="t1" id="tl">—</div><div class="t2" id="tv">0 F</div></div>
+      <button class="btn" id="go-commander">Valider ma commande</button>
+      <button class="btn ghost sm" id="go-payer">J'ai déjà commandé · je veux régler</button>
+    </div>
+  </div>
+
+  <!-- commande validée -->
+  <div class="card" id="s-ok" hidden>
+    <div class="done">
+      <div class="tick wait"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+      <h1>Commande validée</h1>
+      <p class="sub" id="ok-sub"></p>
+    </div>
+    <div class="recap" id="ok-recap"></div>
+    <button class="btn" id="go-regler-now">Régler maintenant</button>
+    <button class="btn ghost sm" id="go-plus-tard">Plus tard</button>
+  </div>
+
+  <!-- déjà commandé aujourd'hui -->
+  <div class="card" id="s-deja" hidden>
+    <p class="eyebrow">Aujourd'hui</p>
+    <h1 id="deja-titre">Tu as déjà commandé</h1>
+    <p class="sub" id="deja-sub"></p>
+    <div class="recap" id="deja-recap"></div>
+    <button class="btn" id="go-regler-deja">Régler maintenant</button>
+    <button class="btn ghost sm" id="go-ajouter">Ajouter quelque chose</button>
+  </div>
+
+  <!-- règlement -->
+  <div id="s-pay" hidden>
+    <div class="card">
+      <p class="eyebrow">À régler</p>
+      <h1 id="pay-total">0 F</h1>
+      <p class="sub">Coche ce que ton paiement couvre.</p>
+      <div class="opts" id="settle"></div>
+      <p class="note">Seules les commandes du jour non réglées apparaissent ici.</p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Moyen de paiement</p>
+      <div class="opts" id="moyens"></div>
+      <div id="numbox"></div>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Capture du paiement <span class="opt-tag">facultatif</span></p>
+      <p class="sub">Utile en cas de doute. Dema la voit à côté de ta ligne.</p>
+      <div class="drop" id="drop">
+        <input type="file" id="fichier" accept="image/*" hidden>
+        <button class="btn ghost sm" type="button" id="go-fichier">Choisir une image</button>
+        <button class="btn ghost sm" type="button" id="go-coller">Coller</button>
+        <p class="note" id="preuve-etat">Tu peux aussi faire un appui long puis « Coller » ici.</p>
+        <img id="apercu" alt="" hidden>
+      </div>
+      <button class="btn" id="go-paye">J'ai réglé</button>
+      <button class="btn ghost sm" id="go-retour">Retour</button>
+    </div>
+  </div>
+
+  <!-- réglé -->
+  <div class="card" id="s-fin" hidden>
+    <div class="done">
+      <div class="tick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5.2 5.2L20 7"/></svg></div>
+      <h1>Paiement enregistré</h1>
+      <p class="sub" id="fin-sub"></p>
+    </div>
+    <div class="recap" id="fin-recap"></div>
+    <button class="btn ghost sm" id="go-fin">Terminé</button>
+  </div>
+
+  <div class="card" id="s-ferme" hidden>
+    <p class="eyebrow">Commandes closes</p>
+    <h1>C'est trop tard pour aujourd'hui</h1>
+    <p class="sub" id="ferme-sub"></p>
+    <button class="btn ghost sm" id="go-ferme-payer">Je veux quand même régler</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ===================================================================
+   CONFIGURATION — les trois seules lignes à remplir
+   =================================================================== */
+var CONFIG = {
+  url:  "https://fiqrfrcsgxqvqjgvzasr.supabase.co",  // Project URL
+  cle:  "sb_publishable_yAowOWU05DlJ_xQXU0vQ0A_bk6O23ht",  // clé publique
+  site: ""                                           // laissé vide : il vient de l'adresse
+};
+
+// L'entreprise vient du lien : …/?s=yas, …/?s=orange. Un seul déploiement sert
+// tout le monde, et c'est le lien envoyé dans chaque groupe WhatsApp qui dit
+// d'où vient la commande — exactement comme le sondage, qui était déjà par groupe.
+// Sans « s », on ne devine pas : envoyer un employé d'Orange commander chez Yas
+// serait pire que de lui dire que son lien est incomplet.
+(function(){
+  try {
+    var s = (location.search.match(/[?&]s=([^&]*)/) || [])[1];
+    if(s) CONFIG.site = decodeURIComponent(s).toLowerCase().replace(/[^a-z0-9-]/g, "");
+  } catch(e){}
+})();
+/* =================================================================== */
+
+(function(){
+  "use strict";
+  var $ = function(i){ return document.getElementById(i); };
+  var fcfa = function(n){ return (n||0).toLocaleString("fr-FR").replace(/ | /g," ") + " F"; };
+  var pre = function(n){ return String(n||"").split(" ")[0]; };
+
+  // identité de l'appareil : créée une fois, gardée dans le navigateur
+  var APPAREIL = null;
+  try {
+    APPAREIL = localStorage.getItem("dema_appareil");
+    if(!APPAREIL){
+      APPAREIL = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+               : "a" + Date.now() + Math.random().toString(36).slice(2);
+      localStorage.setItem("dema_appareil", APPAREIL);
+    }
+  } catch(e){
+    APPAREIL = "volatile-" + Math.random().toString(36).slice(2);
+  }
+  var MON_NOM = null;
+  try { MON_NOM = localStorage.getItem("dema_nom"); } catch(e){}
+
+  var MENU = null, paniers = [], moyen = null, aRegler = [], enCours = false;
+
+  function toast(m){
+    var t = $("toast"); t.textContent = m; t.classList.add("on");
+    clearTimeout(toast._h); toast._h = setTimeout(function(){ t.classList.remove("on"); }, 2600);
+  }
+  function erreur(m){
+    var e = $("erreur");
+    if(!m){ e.hidden = true; return; }
+    e.textContent = m; e.hidden = false; window.scrollTo(0,0);
+  }
+
+  function rpc(fn, args){
+    return fetch(CONFIG.url + "/rest/v1/rpc/" + fn, {
+      method: "POST",
+      headers: { "apikey": CONFIG.cle, "Authorization": "Bearer " + CONFIG.cle,
+                 "Content-Type": "application/json" },
+      body: JSON.stringify(args || {})
+    }).then(function(r){
+      return r.text().then(function(txt){
+        var d = null;
+        try { d = txt ? JSON.parse(txt) : null; } catch(e){ d = txt; }
+        if(!r.ok){
+          var msg = String((d && (d.message || d.hint || d.details)) || ("Erreur " + r.status))
+                      .replace(/^(ERREUR|ERROR):\s*/i, "");
+          // Si le serveur ne reconnaît plus l'appareil, inutile d'afficher une
+          // erreur technique : on renvoie vers l'inscription.
+          if(/appareil non inscrit/i.test(msg)){
+            try { localStorage.removeItem("dema_nom"); } catch(e){}
+            MON_NOM = null; paniers = [];
+            demarrer();
+            throw new Error("Reprends ton nom une fois, puis recommence.");
+          }
+          throw new Error(msg);
+        }
+        return d;
+      });
+    });
+  }
+
+  function ecran(n){
+    ["who","order","ok","deja","pay","fin","ferme"].forEach(function(k){ $("s-"+k).hidden = (k !== n); });
+    window.scrollTo(0,0);
+  }
+
+  var forcerMenu = false;
+
+  /* ---------- démarrage ---------- */
+  function demarrer(){
+    erreur(null);
+    forcerMenu = false;
+    if(!CONFIG.site){
+      $("when").textContent = "—";
+      erreur("Ce lien est incomplet. Demande à ton entreprise le lien exact "
+           + "du traiteur — il finit par « ?s= » suivi du nom de l'entreprise.");
+      return;
+    }
+    $("when").textContent = "Chargement…";
+    rpc("fn_menu", { p_slug: CONFIG.site, p_appareil: APPAREIL }).then(function(m){
+      MENU = m;
+      $("when").textContent = m.site + " · " + new Date(m.jour + "T12:00:00")
+        .toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" });
+      $("menuday").textContent = "Menu du jour";
+      $("cloture").textContent = "Commandes jusqu'à " + m.cloture + ".";
+      if(m.commandes_du_jour > 0){
+        $("social").hidden = false;
+        $("social").children[0].textContent = m.commandes_du_jour;
+        $("social").children[1].textContent = m.commandes_du_jour > 1
+          ? "personnes ont déjà commandé aujourd'hui" : "personne a déjà commandé aujourd'hui";
+      } else { $("social").hidden = true; }
+
+      // Le téléphone se souvient, la base a peut-être oublié : on revient à
+      // l'inscription avec le nom déjà écrit, au lieu d'échouer plus loin.
+      if(MON_NOM && m.inscrit === false){
+        $("nom").value = MON_NOM;
+        $("who-note").textContent = "Ce téléphone te connaît, mais pas encore ce menu. "
+          + "Vérifie ton nom et reprends.";
+        $("who-note").hidden = false;
+        MON_NOM = null;
+        try { localStorage.removeItem("dema_nom"); } catch(e){}
+        ecran("who"); return;
+      }
+      if(!MON_NOM){ ecran("who"); return; }
+      $("hello").textContent = pre(MON_NOM);
+      if(!m.ouvert){ $("ferme-sub").textContent = "La clôture était à " + m.cloture + ". Reviens demain matin."; ecran("ferme"); return; }
+      if(!paniers.length) paniers = [{ pour:null, choix:{}, ouvert:true }];
+      rendrePaniers(); rendreTotal();
+      // Déjà commandé aujourd'hui ? On le lui rappelle au lieu de le laisser
+      // composer une seconde commande, que le serveur refuserait.
+      if((m.deja || []).length && !forcerMenu){ rendreDeja(m.deja); ecran("deja"); return; }
+      ecran("order");
+    }).catch(function(e){
+      $("when").textContent = "—";
+      erreur("Impossible de charger le menu : " + e.message);
+    });
+  }
+
+  /* ---------- rappel de la commande du jour ---------- */
+  function rendreDeja(liste){
+    var moi   = liste.filter(function(c){ return c.moi; })[0] || null;
+    var pour  = liste.filter(function(c){ return !c.moi; });
+    var du    = liste.filter(function(c){ return c.statut === "du"; });
+    var total = liste.reduce(function(s2,c){ return s2 + c.montant; }, 0);
+
+    $("deja-titre").textContent = moi ? "Tu as déjà commandé" : "Tu as commandé pour un collègue";
+    $("deja-sub").textContent = du.length
+      ? "Il reste " + fcfa(du.reduce(function(s2,c){ return s2+c.montant; },0)) + " à régler."
+      : "Tout est réglé. Bon appétit.";
+
+    var r = $("deja-recap"); r.innerHTML = "";
+    liste.forEach(function(c){
+      var d = document.createElement("div"); d.innerHTML = "<span></span><span></span>";
+      d.children[0].textContent = (c.moi ? "Ma commande" : pre(c.nom))
+        + (c.statut === "paye" ? " · réglée" : "");
+      d.children[1].textContent = (c.detail || "—") + " · " + fcfa(c.montant);
+      r.appendChild(d);
+    });
+    var t = document.createElement("div"); t.innerHTML = "<span></span><span></span>";
+    t.children[0].textContent = "Total"; t.children[1].textContent = fcfa(total);
+    r.appendChild(t);
+
+    $("go-regler-deja").hidden = du.length === 0;
+    $("go-ajouter").textContent = MENU && MENU.ouvert
+      ? "Ajouter quelque chose" : "Commandes closes";
+    $("go-ajouter").disabled = !(MENU && MENU.ouvert);
+  }
+  $("go-ajouter").addEventListener("click", function(){
+    forcerMenu = true;
+    paniers = [{ pour:null, choix:{}, ouvert:true }];
+    rendrePaniers(); rendreTotal(); ecran("order");
+  });
+  $("go-regler-deja").addEventListener("click", function(){ ouvrirPaiement(); });
+
+  /* ---------- inscription ---------- */
+  var tSug = null;
+  $("nom").addEventListener("input", function(){
+    clearTimeout(tSug);
+    var q = $("nom").value.trim();
+    if(q.length < 2){ $("suggest").innerHTML = ""; return; }
+    tSug = setTimeout(function(){
+      rpc("fn_suggestions", { p_slug: CONFIG.site, p_nom: q }).then(function(list){
+        var b = $("suggest"); b.innerHTML = "";
+        (list||[]).forEach(function(p){
+          var e = document.createElement("button");
+          e.type = "button"; e.className = "sgi";
+          e.innerHTML = '<span class="sgn"></span><span class="sgt"></span>';
+          e.querySelector(".sgn").textContent = p.nom;
+          e.querySelector(".sgt").textContent = p.pris ? "déjà sur un autre téléphone" : "c'est toi ?";
+          e.addEventListener("click", function(){ $("nom").value = p.nom; inscrire(); });
+          b.appendChild(e);
+        });
+      }).catch(function(){});
+    }, 250);
+  });
+
+  function inscrire(){
+    var v = $("nom").value.replace(/\s+/g," ").trim();
+    if(v.length < 2){ toast("Écris ton nom d'abord"); $("nom").focus(); return; }
+    if(enCours) return; enCours = true; erreur(null);
+    rpc("fn_inscrire", { p_slug: CONFIG.site, p_nom: v,
+                         p_tel: $("tel").value.trim() || null, p_appareil: APPAREIL })
+      .then(function(p){
+        MON_NOM = p.nom;
+        try { localStorage.setItem("dema_nom", p.nom); } catch(e){}
+        toast("Bienvenue " + pre(p.nom));
+        demarrer();
+      })
+      .catch(function(e){ erreur(e.message); })
+      .then(function(){ enCours = false; });
+  }
+  $("go-inscrire").addEventListener("click", inscrire);
+
+  /* ---------- commande ---------- */
+  function article(rid, aid){
+    var r = (MENU.rubriques||[]).filter(function(x){ return x.id === rid; })[0];
+    if(!r) return null;
+    return r.articles.filter(function(a){ return a.id === aid; })[0] || null;
+  }
+  function montant(choix){
+    var m = 0, rid, aid;
+    for(rid in choix) for(aid in choix[rid]){
+      var a = article(rid, aid); if(a) m += choix[rid][aid] * a.prix;
+    }
+    return m;
+  }
+  function resume(choix){
+    var out = [];
+    (MENU.rubriques||[]).forEach(function(r){
+      if(!choix[r.id]) return;
+      r.articles.forEach(function(a){
+        var q = choix[r.id][a.id];
+        if(q) out.push(a.nom + (q > 1 ? " × " + q : ""));
+      });
+    });
+    return out.join(" + ");
+  }
+  // « Obligatoire » veut dire : on ne commande pas un jus sans plat. Mais quand
+  // la personne a DÉJÀ une commande du jour, elle a déjà son plat : exiger de le
+  // reprendre l'obligerait à en commander un second. On se contente alors
+  // d'exiger que l'ajout ne soit pas vide.
+  function sansAccent(t){
+    t = String(t||"").toLowerCase().replace(/\s+/g," ").trim();
+    try { return t.normalize("NFD").replace(/[\u0300-\u036f]/g,""); } catch(e){ return t; }
+  }
+  function dejaSaCommande(p){
+    var l = (MENU && MENU.deja) || [];
+    if(!p.pour) return l.some(function(c){ return c.moi; });
+    var n = sansAccent(p.pour);
+    return l.some(function(c){ return !c.moi && sansAccent(c.nom).indexOf(n) === 0; });
+  }
+  function panierVide(p){
+    for(var r in p.choix) for(var a in p.choix[r]) if(p.choix[r][a]) return false;
+    return true;
+  }
+  function panierOk(p){
+    if(dejaSaCommande(p)) return !panierVide(p);
+    var ok = true;
+    (MENU.rubriques||[]).forEach(function(r){
+      if(!r.obligatoire || !r.articles.length) return;
+      if(!p.choix[r.id] || !Object.keys(p.choix[r.id]).length) ok = false;
+    });
+    return ok;
+  }
+  // reste disponible : limite − déjà pris − ce qui est en train d'être choisi
+  function enPanier(rid, aid){
+    var n = 0;
+    paniers.forEach(function(p){ if(p.choix[rid] && p.choix[rid][aid]) n += p.choix[rid][aid]; });
+    return n;
+  }
+  function dispo(r, a){
+    if(a.limite === null || a.limite === undefined) return null;
+    return Math.max(0, a.limite - (a.pris || 0) - enPanier(r.id, a.id));
+  }
+
+  function rendrePaniers(){
+    var box = $("paniers"); box.innerHTML = "";
+    paniers.forEach(function(p, idx){
+      var card = document.createElement("div"); card.className = "card";
+      var head = document.createElement("div"); head.className = "phead";
+      var tog = document.createElement("button"); tog.type = "button"; tog.className = "ptog";
+      tog.setAttribute("aria-expanded", p.ouvert ? "true" : "false");
+      tog.innerHTML = '<span class="caret"></span><span class="ptxt"><span class="pname"></span><span class="psum"></span></span>';
+      tog.querySelector(".pname").textContent = p.pour ? p.pour : "Ma commande";
+      var s = tog.querySelector(".psum");
+      s.textContent = panierOk(p) ? resume(p.choix) : "à compléter";
+      if(!panierOk(p)) s.classList.add("manque");
+      if(p.ouvert) tog.querySelector(".caret").classList.add("up");
+      tog.addEventListener("click", function(){ p.ouvert = !p.ouvert; rendrePaniers(); });
+      head.appendChild(tog);
+      var tt = document.createElement("span"); tt.className = "ptot";
+      tt.textContent = fcfa(montant(p.choix)); head.appendChild(tt);
+      if(p.pour){
+        var x = document.createElement("button"); x.type = "button"; x.className = "copy";
+        x.textContent = "×"; x.setAttribute("aria-label", "Retirer la commande de " + p.pour);
+        x.addEventListener("click", function(){ paniers.splice(idx,1); rendrePaniers(); rendreTotal(); });
+        head.appendChild(x);
+      }
+      card.appendChild(head);
+      if(p.ouvert) blocs(card, p);
+      box.appendChild(card);
+    });
+  }
+
+  function blocs(card, p){
+    (MENU.rubriques||[]).forEach(function(r){
+      if(!r.articles.length) return;
+      var blk = document.createElement("div"); blk.className = "rubblk";
+      var h = document.createElement("div"); h.className = "rubhead";
+      var t = document.createElement("p"); t.className = "eyebrow"; t.style.margin = "0";
+      t.textContent = r.nom; h.appendChild(t);
+      if(r.offert){ var f = document.createElement("span"); f.className = "tag free";
+                    f.textContent = "Offert aujourd'hui"; h.appendChild(f); }
+      blk.appendChild(h);
+      var rule = document.createElement("p"); rule.className = "sub"; rule.style.fontSize = "12px";
+      rule.textContent = (r.mode === "unique" ? "Un seul choix" : "Plusieurs choix possibles")
+                       + (r.obligatoire ? " · obligatoire" : " · facultatif");
+      blk.appendChild(rule);
+      var opts = document.createElement("div"); opts.className = "opts";
+      r.articles.forEach(function(a){
+        var q = (p.choix[r.id] && p.choix[r.id][a.id]) || 0;
+        var reste = dispo(r, a);
+        var epuise = (reste !== null && reste === 0 && q === 0);
+        var row = document.createElement("div");
+        row.className = "opt" + (q > 0 ? " on" : "") + (epuise ? " epuise" : "");
+        var hit = document.createElement("button"); hit.type = "button"; hit.className = "hit";
+        hit.disabled = epuise;
+        var bx = document.createElement("span"); bx.className = "box" + (r.mode === "unique" ? " round" : "");
+        var nw = document.createElement("span"); nw.className = "nmwrap";
+        var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = a.nom;
+        nw.appendChild(nm);
+        if(a.qui && a.qui.length){
+          var w = document.createElement("span"); w.className = "who2";
+          w.textContent = a.qui.slice(0,3).join(", ") + (a.qui.length > 3 ? " +" + (a.qui.length-3) : "");
+          nw.appendChild(w);
+        }
+        hit.appendChild(bx); hit.appendChild(nw);
+        hit.addEventListener("click", function(){
+          if(!p.choix[r.id]) p.choix[r.id] = {};
+          if(r.mode === "unique"){
+            var etait = q > 0; p.choix[r.id] = {};
+            if(!etait) p.choix[r.id][a.id] = 1;
+          } else {
+            if(q > 0) delete p.choix[r.id][a.id]; else p.choix[r.id][a.id] = 1;
+          }
+          rendrePaniers(); rendreTotal();
+        });
+        row.appendChild(hit);
+        if(a.pris > 0){ var c = document.createElement("span"); c.className = "cnt";
+                        c.textContent = a.pris; row.appendChild(c); }
+        if(reste !== null){
+          var rs = document.createElement("span"); rs.className = "tag " + (epuise ? "out" : "reste");
+          rs.textContent = epuise ? "Épuisé" : "reste " + reste; row.appendChild(rs);
+        }
+        var px = document.createElement("span"); px.className = "pr";
+        px.textContent = a.prix === 0 ? "offert" : fcfa(a.prix); row.appendChild(px);
+        if(q > 0 && r.quantite){
+          var st = document.createElement("div"); st.className = "step";
+          st.innerHTML = '<button type="button" aria-label="Retirer">−</button><div class="q"></div><button type="button" aria-label="Ajouter">+</button>';
+          st.querySelector(".q").textContent = q;
+          st.children[0].addEventListener("click", function(){
+            if(q <= 1) delete p.choix[r.id][a.id]; else p.choix[r.id][a.id] = q - 1;
+            rendrePaniers(); rendreTotal();
+          });
+          if(reste === 0) st.children[2].disabled = true;
+          st.children[2].addEventListener("click", function(){
+            if(reste === 0){ toast("Il ne reste plus de " + a.nom); return; }
+            p.choix[r.id][a.id] = Math.min(5, q + 1); rendrePaniers(); rendreTotal();
+          });
+          row.appendChild(st);
+        }
+        opts.appendChild(row);
+      });
+      blk.appendChild(opts); card.appendChild(blk);
+    });
+  }
+
+  function rendreTotal(){
+    // Une commande laissée vide est simplement ignorée — on peut très bien ne
+    // commander que pour un collègue. Mais si TOUT est vide, il n'y a rien à valider.
+    var pleins = paniers.filter(function(p){ return !panierVide(p); });
+    var n = 0, tous = pleins.length > 0;
+    pleins.forEach(function(p){
+      for(var r in p.choix) for(var a in p.choix[r]) n += p.choix[r][a];
+      if(!panierOk(p)) tous = false;
+    });
+    var t = paniers.reduce(function(s,p){ return s + montant(p.choix); }, 0);
+    $("tl").textContent = (n <= 1 ? n + " article" : n + " articles")
+      + (pleins.length > 1 ? " · " + pleins.length + " personnes" : "");
+    $("tv").textContent = fcfa(t);
+    $("go-commander").disabled = !tous;
+    $("go-commander").textContent = pleins.length > 1
+      ? "Valider les " + pleins.length + " commandes"
+      : (dejaSaCommande(pleins[0] || paniers[0] || {}) ? "Ajouter à ma commande"
+                                                      : "Valider ma commande");
+  }
+
+  $("go-invite").addEventListener("click", function(){
+    var v = $("invite").value.replace(/\s+/g," ").trim();
+    if(v.length < 2){ toast("Écris son prénom"); $("invite").focus(); return; }
+    var deja = paniers.some(function(p){ return (p.pour||"").toLowerCase() === v.toLowerCase(); });
+    if(deja || v.toLowerCase() === String(MON_NOM).toLowerCase()){ toast(v + " a déjà une commande"); return; }
+    paniers.push({ pour: v, choix: {}, ouvert: true });
+    $("invite").value = "";
+    rendrePaniers(); rendreTotal();
+    toast("Commande ouverte pour " + pre(v));
+  });
+
+  $("go-commander").addEventListener("click", function(){
+    if(enCours) return; enCours = true; erreur(null);
+    var pleins = paniers.filter(function(p){ return !panierVide(p); });
+    var charge = pleins.map(function(p){
+      var lignes = [];
+      for(var r in p.choix) for(var a in p.choix[r]) lignes.push({ article: a, qte: p.choix[r][a] });
+      return { pour: p.pour, lignes: lignes };
+    });
+    rpc("fn_commander", { p_slug: CONFIG.site, p_appareil: APPAREIL, p_commandes: charge })
+      .then(function(res){
+        var r = $("ok-recap"); r.innerHTML = "";
+        pleins.forEach(function(p){
+          var d = document.createElement("div"); d.innerHTML = "<span></span><span></span>";
+          d.children[0].textContent = p.pour ? p.pour : "Ma commande";
+          d.children[1].textContent = resume(p.choix) + " · " + fcfa(montant(p.choix));
+          r.appendChild(d);
+        });
+        var tt = document.createElement("div"); tt.innerHTML = "<span></span><span></span>";
+        tt.children[0].textContent = "À régler"; tt.children[1].textContent = fcfa(res.total);
+        r.appendChild(tt);
+        $("ok-sub").textContent = "Reste à régler : " + fcfa(res.total);
+        paniers = [];
+        ecran("ok");
+      })
+      .catch(function(e){ erreur(e.message); ecran("order"); })
+      .then(function(){ enCours = false; });
+  });
+
+  /* ---------- règlement ---------- */
+  function ouvrirPaiement(){
+    erreur(null);
+    rpc("fn_a_regler", { p_slug: CONFIG.site, p_appareil: APPAREIL }).then(function(list){
+      if(!list || !list.length){ toast("Rien à régler aujourd'hui"); return; }
+      // on pré-coche ma commande ET celles que j'ai passées pour d'autres
+      aRegler = list.filter(function(c){ return c.moi || c.par_moi; }).map(function(c){ return c.id; });
+      rendreSettle(list); rendreMoyens(); ecran("pay");
+    }).catch(function(e){ erreur(e.message); });
+  }
+  $("go-regler-now").addEventListener("click", ouvrirPaiement);
+  $("go-payer").addEventListener("click", ouvrirPaiement);
+  $("go-ferme-payer").addEventListener("click", ouvrirPaiement);
+  $("go-plus-tard").addEventListener("click", function(){ paniers = []; demarrer(); });
+  $("go-fin").addEventListener("click", function(){ paniers = []; demarrer(); });
+  $("go-retour").addEventListener("click", function(){ paniers = []; demarrer(); });
+
+  var LISTE = [];
+  function rendreSettle(list){
+    LISTE = list;
+    var box = $("settle"); box.innerHTML = "";
+    list.forEach(function(c){
+      var on = aRegler.indexOf(c.id) > -1;
+      var row = document.createElement("div"); row.className = "opt" + (on ? " on" : "");
+      var hit = document.createElement("button"); hit.type = "button"; hit.className = "hit";
+      hit.innerHTML = '<span class="box"></span><span class="nmwrap"><span class="nm"></span><span class="who2"></span></span>';
+      hit.querySelector(".nm").textContent = c.moi ? "Ma commande" : c.nom;
+      hit.querySelector(".who2").textContent = c.detail || "";
+      hit.addEventListener("click", function(){
+        var i = aRegler.indexOf(c.id);
+        if(i > -1) aRegler.splice(i,1); else aRegler.push(c.id);
+        rendreSettle(LISTE); rendreMoyens();
+      });
+      row.appendChild(hit);
+      var px = document.createElement("span"); px.className = "pr"; px.textContent = fcfa(c.montant);
+      row.appendChild(px); box.appendChild(row);
+    });
+    $("pay-total").textContent = fcfa(somme());
+  }
+  function somme(){
+    return LISTE.filter(function(c){ return aRegler.indexOf(c.id) > -1; })
+                .reduce(function(s,c){ return s + c.montant; }, 0);
+  }
+  function rendreMoyens(){
+    var box = $("moyens"); box.innerHTML = "";
+    var liste = (MENU && MENU.moyens) || [];
+    if(!moyen && liste.length) moyen = liste[0].code;
+    liste.forEach(function(m){
+      var row = document.createElement("div"); row.className = "opt" + (moyen === m.code ? " on" : "");
+      var hit = document.createElement("button"); hit.type = "button"; hit.className = "hit";
+      hit.innerHTML = '<span class="box round"></span><span class="nmwrap"><span class="nm"></span></span>';
+      hit.querySelector(".nm").textContent = m.nom;
+      hit.addEventListener("click", function(){ moyen = m.code; rendreMoyens(); });
+      row.appendChild(hit); box.appendChild(row);
+    });
+    var nb = $("numbox"); nb.innerHTML = "";
+    var m2 = liste.filter(function(x){ return x.code === moyen; })[0];
+    if(m2 && m2.numero){
+      var p = document.createElement("div"); p.className = "pay";
+      p.innerHTML = '<div><div class="cap"></div><div class="num" id="numero"></div></div>';
+      p.querySelector(".cap").textContent = m2.nom;
+      p.querySelector(".num").textContent = m2.numero;
+      var c = document.createElement("button"); c.className = "copy"; c.type = "button"; c.textContent = "Copier";
+      c.addEventListener("click", function(){ copier(m2.numero); });
+      p.appendChild(c); nb.appendChild(p);
+    }
+    $("go-paye").disabled = aRegler.length === 0;
+  }
+  function copier(txt){
+    var ko = function(){
+      var el = $("numero"); if(!el){ toast("Copie indisponible"); return; }
+      var r = document.createRange(); r.selectNodeContents(el);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      toast("Sélectionné — copie-le");
+    };
+    try {
+      if(navigator.clipboard && navigator.clipboard.writeText)
+        navigator.clipboard.writeText(String(txt).replace(/ /g,"")).then(function(){ toast("Numéro copié"); }, ko);
+      else ko();
+    } catch(e){ ko(); }
+  }
+
+  /* ---------- capture du paiement (facultative) ---------- */
+  // Une photo de 4 Mo prise au téléphone n'a aucun intérêt ici : on la réduit
+  // dans le navigateur avant de l'envoyer. 1000 px de large suffisent pour
+  // relire un montant, et on passe de quelques Mo à ~80 ko.
+  var PREUVE = null;   // le Blob prêt à partir
+  function reduire(src){
+    return new Promise(function(ok, ko){
+      var img = new Image();
+      img.onload = function(){
+        var m = 1000, w = img.width, h = img.height;
+        if(Math.max(w,h) > m){ var k = m / Math.max(w,h); w = Math.round(w*k); h = Math.round(h*k); }
+        var cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+        cv.getContext("2d").drawImage(img, 0, 0, w, h);
+        if(cv.toBlob) cv.toBlob(function(b){ b ? ok(b) : ko(new Error("conversion impossible")); },
+                                "image/jpeg", 0.7);
+        else ko(new Error("navigateur trop ancien"));
+      };
+      img.onerror = function(){ ko(new Error("image illisible")); };
+      img.src = src;
+    });
+  }
+  function prendreImage(file){
+    if(!file){ return; }
+    if(!/^image\//.test(file.type)){ toast("Ce n'est pas une image"); return; }
+    $("preuve-etat").textContent = "Préparation…";
+    var fr = new FileReader();
+    fr.onload = function(){
+      reduire(fr.result).then(function(b){
+        PREUVE = b;
+        $("apercu").src = URL.createObjectURL(b); $("apercu").hidden = false;
+        $("preuve-etat").textContent = "Prête (" + Math.round(b.size/1024) + " ko). Elle partira avec ton règlement.";
+      }).catch(function(e){
+        PREUVE = null; $("apercu").hidden = true;
+        $("preuve-etat").textContent = "Image non prise en compte : " + e.message;
+      });
+    };
+    fr.onerror = function(){ $("preuve-etat").textContent = "Lecture du fichier impossible."; };
+    fr.readAsDataURL(file);
+  }
+  $("go-fichier").addEventListener("click", function(){ $("fichier").click(); });
+  $("fichier").addEventListener("change", function(){ prendreImage(this.files && this.files[0]); });
+  // collage : le bouton quand le navigateur le permet, sinon Ctrl+V / appui long
+  $("go-coller").addEventListener("click", function(){
+    if(!(navigator.clipboard && navigator.clipboard.read)){
+      $("preuve-etat").textContent = "Ton navigateur ne permet pas le collage par bouton : "
+        + "fais un appui long dans le cadre puis « Coller », ou choisis l'image.";
+      return;
+    }
+    navigator.clipboard.read().then(function(items){
+      for(var i=0;i<items.length;i++){
+        var t = items[i].types.filter(function(x){ return /^image\//.test(x); })[0];
+        if(t){ items[i].getType(t).then(function(b){ prendreImage(new File([b], "capture", {type:b.type})); }); return; }
+      }
+      $("preuve-etat").textContent = "Rien d'image dans le presse-papier.";
+    }).catch(function(){
+      $("preuve-etat").textContent = "Collage refusé par le navigateur : choisis l'image.";
+    });
+  });
+  document.addEventListener("paste", function(ev){
+    if($("s-pay").hidden) return;
+    var it = (ev.clipboardData && ev.clipboardData.items) || [];
+    for(var i=0;i<it.length;i++){
+      if(/^image\//.test(it[i].type)){ prendreImage(it[i].getAsFile()); ev.preventDefault(); return; }
+    }
+  });
+  ["dragover","drop"].forEach(function(e){
+    $("drop").addEventListener(e, function(ev){
+      ev.preventDefault();
+      if(e === "drop") prendreImage(ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]);
+    });
+  });
+  function envoyerPreuve(){
+    if(!PREUVE) return Promise.resolve(null);
+    var chemin = CONFIG.site + "/" + (MENU && MENU.jour ? MENU.jour : "sans-date")
+               + "/" + APPAREIL.slice(0,8) + "-" + Date.now() + ".jpg";
+    return fetch(CONFIG.url + "/storage/v1/object/preuves/" + chemin, {
+      method: "POST",
+      headers: { "apikey": CONFIG.cle, "Authorization": "Bearer " + CONFIG.cle,
+                 "Content-Type": "image/jpeg" },
+      body: PREUVE
+    }).then(function(r){
+      // Le paiement compte plus que la capture : si l'envoi échoue, on continue
+      // sans elle et on le dit, plutôt que de bloquer le règlement.
+      if(!r.ok) return null;
+      return chemin;
+    }).catch(function(){ return null; });
+  }
+
+  $("go-paye").addEventListener("click", function(){
+    if(!aRegler.length || enCours) return; enCours = true; erreur(null);
+    var total = somme(), autres = LISTE.filter(function(c){
+      return aRegler.indexOf(c.id) > -1 && !c.moi; }).map(function(c){ return pre(c.nom); });
+    var nomMoyen = ((MENU.moyens||[]).filter(function(m){ return m.code === moyen; })[0]||{}).nom || moyen;
+    var attendue = !!PREUVE;
+    $("go-paye").textContent = attendue ? "Envoi de la capture…" : "Enregistrement…";
+    envoyerPreuve().then(function(chemin){
+      if(attendue && !chemin) toast("Capture non envoyée — le paiement est bien enregistré");
+      return rpc("fn_declarer_paiement", { p_slug: CONFIG.site, p_appareil: APPAREIL,
+            p_moyen: moyen, p_commandes: aRegler, p_preuve: chemin });
+    })
+      .then(function(res){
+        var r = $("fin-recap"); r.innerHTML = "";
+        [["Moyen", nomMoyen],
+         ["Commandes réglées", aRegler.length],
+         ["Dont pour", autres.length ? autres.join(", ") : "—"],
+         ["Montant", fcfa(res.montant)]].forEach(function(x){
+          var d = document.createElement("div"); d.innerHTML = "<span></span><span></span>";
+          d.children[0].textContent = x[0]; d.children[1].textContent = x[1]; r.appendChild(d);
+        });
+        $("fin-sub").textContent = "Dema le retrouvera dans son total " + nomMoyen + " du jour.";
+        aRegler = []; PREUVE = null;
+        $("apercu").hidden = true; $("fichier").value = "";
+        $("preuve-etat").textContent = "Tu peux aussi faire un appui long puis « Coller » ici.";
+        ecran("fin");
+      })
+      .catch(function(e){ erreur(e.message); })
+      .then(function(){ enCours = false; $("go-paye").textContent = "J'ai réglé"; });
+  });
+
+  demarrer();
+})();
+</script>
+</body>
+</html>
