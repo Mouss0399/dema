@@ -250,6 +250,135 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
+-- 3 ter. Le traiteur saisit une commande
+-- ---------------------------------------------------------------------
+-- Quelqu'un l'appelle ou lui écrit en privé : « mets-moi un thiep ». Sans ce
+-- bouton elle devrait ouvrir le lien employé et se faire passer pour lui, ce
+-- qui attacherait SON téléphone au nom de cette personne.
+--
+-- Deux différences avec la commande d'un employé, assumées :
+--   · elle peut passer outre l'heure de clôture — c'est son métier, pas une
+--     règle technique : si elle accepte un retardataire, c'est sa décision ;
+--   · elle peut servir n'importe quel jour déjà ouvert, pas seulement celui-ci.
+-- Les limites de portions, elles, tiennent : elle ne peut pas vendre un plat
+-- qu'elle n'a pas.
+create or replace function fn_commander_pour(
+  p_site text, p_nom text, p_lignes jsonb, p_jour date default null)
+returns jsonb language plpgsql security definer
+set search_path = public, extensions as $$
+declare
+  v_t uuid; v_s site; v_jour date; v_dow smallint;
+  v_p uuid; v_cid uuid; v_statut text; v_lig jsonb; v_art article;
+  v_pris int; v_total int; v_r record; v_offert boolean; v_quantite boolean; v_qte int;
+begin
+  v_t := fn_exige_traiteur();
+
+  select * into v_s from site where slug = p_site and traiteur_id = v_t;
+  if not found then raise exception 'Entreprise introuvable.'; end if;
+
+  v_jour := coalesce(p_jour, (now() at time zone 'Africa/Dakar')::date);
+  v_dow  := extract(isodow from v_jour);
+
+  if nullif(trim(coalesce(p_nom,'')),'') is null then
+    raise exception 'Écris le nom de la personne.';
+  end if;
+  if coalesce(jsonb_array_length(p_lignes),0) = 0 then
+    raise exception 'Choisis au moins un plat.';
+  end if;
+
+  -- la personne : retrouvée par son nom, créée si elle est nouvelle. Pas
+  -- d'appareil : elle pourra s'inscrire plus tard et récupérer sa ligne.
+  select id into v_p from personne
+   where site_id = v_s.id and nom_norm = fn_norm(p_nom) and fusionnee_vers is null;
+  if v_p is null then
+    insert into personne (site_id, nom) values (v_s.id, trim(p_nom)) returning id into v_p;
+  end if;
+
+  v_cid := null; v_statut := null;
+  select id, statut into v_cid, v_statut from commande
+   where site_id = v_s.id and personne_id = v_p and jour = v_jour for update;
+  if v_cid is not null then
+    if v_statut = 'annule' then
+      delete from ligne where commande_id = v_cid;
+      update commande set statut = 'du' where id = v_cid;
+    end if;
+  else
+    insert into commande (site_id, personne_id, jour)
+    values (v_s.id, v_p, v_jour) returning id into v_cid;
+  end if;
+
+  for v_lig in select * from jsonb_array_elements(p_lignes) loop
+    select * into v_art from article
+     where id = (v_lig->>'article')::uuid and actif for update;
+    if not found then raise exception 'Plat inconnu ou retiré du menu.'; end if;
+    if not exists (select 1 from rubrique r
+                    where r.id = v_art.rubrique_id and r.traiteur_id = v_t) then
+      raise exception 'Ce plat n''est pas à toi.';
+    end if;
+    if v_art.jour is not null and v_art.jour <> v_dow then
+      raise exception '% n''est pas au menu ce jour-là.', v_art.nom;
+    end if;
+
+    if v_art.limite is not null then
+      select coalesce(sum(l.qte),0) into v_pris
+        from ligne l join commande c on c.id = l.commande_id
+       where l.article_id = v_art.id and c.jour = v_jour
+         and c.site_id = v_s.id and c.statut <> 'annule';
+      if v_pris + (v_lig->>'qte')::int > v_art.limite then
+        raise exception '% : il n''en reste que %', v_art.nom, greatest(0, v_art.limite - v_pris);
+      end if;
+    end if;
+
+    select offert, quantite into v_offert, v_quantite
+      from rubrique where id = v_art.rubrique_id;
+
+    insert into ligne (commande_id, article_id, qte, prix_unitaire)
+    values (v_cid, v_art.id, (v_lig->>'qte')::int,
+            case when v_offert then 0 else v_art.prix end)
+    on conflict (commande_id, article_id) do update
+      set qte = ligne.qte + excluded.qte
+    returning qte into v_qte;
+
+    if not v_quantite and v_qte > 1 then
+      raise exception '% : une seule portion par personne', v_art.nom;
+    end if;
+  end loop;
+
+  for v_r in
+    select r.nom as nom from ligne l
+      join article a on a.id = l.article_id
+      join rubrique r on r.id = a.rubrique_id
+     where l.commande_id = v_cid and r.mode = 'unique'
+     group by r.id, r.nom having count(distinct l.article_id) > 1
+  loop
+    raise exception 'Un seul choix dans « % » : cette personne en a déjà un.', v_r.nom;
+  end loop;
+
+  select montant into v_total from commande where id = v_cid;
+  return jsonb_build_object('commande', v_cid, 'nom', (select nom from personne where id = v_p),
+                            'montant', v_total, 'jour', v_jour);
+end $$;
+
+-- Annuler côté traiteur : elle, contrairement à l'employé, peut annuler une
+-- commande déjà réglée — c'est elle qui rendra l'argent, hors de l'outil.
+-- Le versement reste enregistré : il est parti pour de vrai.
+create or replace function fn_annuler_pour(p_commande uuid)
+returns jsonb language plpgsql security definer
+set search_path = public, extensions as $$
+declare v_t uuid; v_n int;
+begin
+  v_t := fn_exige_traiteur();
+  update commande set statut = 'annule'
+   where id = p_commande
+     and site_id in (select id from site where traiteur_id = v_t)
+     and statut <> 'annule';
+  get diagnostics v_n = row_count;
+  if v_n = 0 then raise exception 'Commande introuvable ou déjà annulée.'; end if;
+  delete from ligne where commande_id = p_commande;
+  return jsonb_build_object('commande', p_commande, 'annulee', true);
+end $$;
+
+-- ---------------------------------------------------------------------
 -- 4. Fermeture : ces fonctions ne sont PAS publiques
 -- ---------------------------------------------------------------------
 -- PostgreSQL donne l'exécution à tout le monde par défaut. On retire, puis on
@@ -260,9 +389,13 @@ begin
   execute 'revoke execute on function fn_mon_traiteur()         from public';
   execute 'revoke execute on function fn_tableau(date,text)     from public';
   execute 'revoke execute on function fn_pointer(uuid,boolean)  from public';
+  execute 'revoke execute on function fn_commander_pour(text,text,jsonb,date) from public';
+  execute 'revoke execute on function fn_annuler_pour(uuid)                   from public';
   if exists (select 1 from pg_roles where rolname = 'authenticated') then
     execute 'grant execute on function fn_tableau(date,text) to authenticated';
     execute 'grant execute on function fn_pointer(uuid,boolean) to authenticated';
+    execute 'grant execute on function fn_commander_pour(text,text,jsonb,date) to authenticated';
+    execute 'grant execute on function fn_annuler_pour(uuid)                   to authenticated';
   end if;
   if exists (select 1 from pg_roles where rolname = 'anon') then
     execute 'revoke all on compte from anon';

@@ -148,6 +148,11 @@ h1{font-size:21px} h2{font-size:18px}
   .drop .note{margin:10px 0 0}
   #apercu{display:block;max-width:100%;border-radius:10px;margin-top:10px}
   #apercu[hidden]{display:none}
+  .sub.verrou{color:var(--good);font-weight:600}
+  .annul{display:block;margin-top:6px;border:1.5px solid var(--line);border-radius:8px;
+    background:none;color:var(--ink-3);font-size:11.5px;padding:4px 9px;cursor:pointer;
+    font-family:var(--body)}
+  .annul:disabled{opacity:.5}
 </style>
 </head>
 <body>
@@ -213,6 +218,7 @@ h1{font-size:21px} h2{font-size:18px}
     <div class="recap" id="deja-recap"></div>
     <button class="btn" id="go-regler-deja">Régler maintenant</button>
     <button class="btn ghost sm" id="go-ajouter">Ajouter quelque chose</button>
+    <button class="btn ghost sm" id="go-modifier" hidden>Changer ma commande</button>
   </div>
 
   <!-- règlement -->
@@ -367,7 +373,9 @@ var CONFIG = {
       return;
     }
     $("when").textContent = "Chargement…";
-    rpc("fn_menu", { p_slug: CONFIG.site, p_appareil: APPAREIL }).then(function(m){
+    // on rend la promesse : après une annulation, la suite doit attendre le
+    // menu rafraîchi, sinon elle redessine avec l'ancien
+    return rpc("fn_menu", { p_slug: CONFIG.site, p_appareil: APPAREIL }).then(function(m){
       MENU = m;
       $("when").textContent = m.site + " · " + new Date(m.jour + "T12:00:00")
         .toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" });
@@ -379,6 +387,16 @@ var CONFIG = {
         $("social").children[1].textContent = m.commandes_du_jour > 1
           ? "personnes ont déjà commandé aujourd'hui" : "personne a déjà commandé aujourd'hui";
       } else { $("social").hidden = true; }
+
+      // Fermé : on le dit avant de demander quoi que ce soit. Faire remplir une
+      // inscription pour annoncer ensuite que c'est trop tard, c'est faire
+      // perdre du temps et créer une fiche pour rien.
+      if(!m.ouvert){
+        $("ferme-sub").textContent = "La clôture était à " + m.cloture + ". Reviens demain matin.";
+        $("go-ferme-payer").hidden = !MON_NOM;
+        if(MON_NOM) $("hello").textContent = pre(MON_NOM);
+        ecran("ferme"); return;
+      }
 
       // Le téléphone se souvient, la base a peut-être oublié : on revient à
       // l'inscription avec le nom déjà écrit, au lieu d'échouer plus loin.
@@ -393,7 +411,6 @@ var CONFIG = {
       }
       if(!MON_NOM){ ecran("who"); return; }
       $("hello").textContent = pre(MON_NOM);
-      if(!m.ouvert){ $("ferme-sub").textContent = "La clôture était à " + m.cloture + ". Reviens demain matin."; ecran("ferme"); return; }
       if(!paniers.length) paniers = [{ pour:null, choix:{}, ouvert:true }];
       rendrePaniers(); rendreTotal();
       // Déjà commandé aujourd'hui ? On le lui rappelle au lieu de le laisser
@@ -425,6 +442,15 @@ var CONFIG = {
         + ((c.reste || 0) <= 0 ? " · réglée"
            : (c.reste < c.montant ? " · reste " + fcfa(c.reste) : ""));
       d.children[1].textContent = (c.detail || "—") + " · " + fcfa(c.montant);
+      // Annulable tant que les commandes sont ouvertes ET que rien n'a été
+      // versé : un paiement parti chez Wave ne se rappelle pas d'ici.
+      if(MENU && MENU.ouvert && c.reste === c.montant){
+        var x = document.createElement("button");
+        x.type = "button"; x.className = "annul";
+        x.textContent = c.moi ? "Annuler" : "Annuler " + pre(c.nom);
+        x.addEventListener("click", function(){ annuler(c, x); });
+        d.appendChild(x);
+      }
       r.appendChild(d);
     });
     var t = document.createElement("div"); t.innerHTML = "<span></span><span></span>";
@@ -432,10 +458,37 @@ var CONFIG = {
     r.appendChild(t);
 
     $("go-regler-deja").hidden = du.length === 0;
+    var intacte = moi && MENU && MENU.ouvert && moi.reste === moi.montant;
+    $("go-modifier").hidden = !intacte;
     $("go-ajouter").textContent = MENU && MENU.ouvert
       ? "Ajouter quelque chose" : "Commandes closes";
     $("go-ajouter").disabled = !(MENU && MENU.ouvert);
   }
+  // Annuler, puis éventuellement refaire : « modifier » n'est pas une opération
+  // à part, c'est annuler et recommander. Une commande annulée repart vide.
+  function annuler(c, bouton){
+    if(bouton){ bouton.disabled = true; bouton.textContent = "…"; }
+    return rpc("fn_annuler", { p_slug: CONFIG.site, p_appareil: APPAREIL, p_commande: c.id })
+      .then(function(){ toast("Commande annulée"); paniers = []; return demarrer(); })
+      .catch(function(e){
+        toast(e.message);
+        if(bouton){ bouton.disabled = false; bouton.textContent = "Annuler"; }
+        throw e;
+      });
+  }
+  $("go-modifier").addEventListener("click", function(){
+    var moi = ((MENU && MENU.deja) || []).filter(function(c){ return c.moi; })[0];
+    if(!moi) return;
+    var b = $("go-modifier"); b.disabled = true; b.textContent = "…";
+    annuler(moi, null).then(function(){
+      forcerMenu = true;
+      paniers = [{ pour:null, choix:{}, ouvert:true }];
+      rendrePaniers(); rendreTotal(); ecran("order");
+    }).catch(function(){}).then(function(){
+      b.disabled = false; b.textContent = "Changer ma commande";
+    });
+  });
+
   $("go-ajouter").addEventListener("click", function(){
     forcerMenu = true;
     paniers = [{ pour:null, choix:{}, ouvert:true }];
@@ -520,6 +573,19 @@ var CONFIG = {
     var n = sansAccent(p.pour);
     return l.some(function(c){ return !c.moi && sansAccent(c.nom).indexOf(n) === 0; });
   }
+  // Ce que le bénéficiaire de cette commande a déjà pris aujourd'hui, par
+  // rubrique. Sert à ne pas lui proposer un second plat du jour.
+  function dejaPris(p){
+    var l = (MENU && MENU.deja) || [];
+    var c = null;
+    if(!p.pour) c = l.filter(function(x){ return x.moi; })[0];
+    else {
+      var n = sansAccent(p.pour);
+      c = l.filter(function(x){ return !x.moi && sansAccent(x.nom).indexOf(n) === 0; })[0];
+    }
+    return (c && c.pris) || {};
+  }
+
   function panierVide(p){
     for(var r in p.choix) for(var a in p.choix[r]) if(p.choix[r][a]) return false;
     return true;
@@ -584,9 +650,17 @@ var CONFIG = {
                     f.textContent = "Offert aujourd'hui"; h.appendChild(f); }
       blk.appendChild(h);
       var rule = document.createElement("p"); rule.className = "sub"; rule.style.fontSize = "12px";
-      rule.textContent = (r.mode === "unique" ? "Un seul choix" : "Plusieurs choix possibles")
-                       + (r.obligatoire ? " · obligatoire" : " · facultatif");
+      var pris = dejaPris(p)[r.id];
+      var verrou = (r.mode === "unique" && pris);
+      rule.textContent = verrou
+        ? "Déjà dans ta commande : " + pris
+        : (r.mode === "unique" ? "Un seul choix" : "Plusieurs choix possibles")
+          + (r.obligatoire ? " · obligatoire" : " · facultatif");
+      if(verrou) rule.classList.add("verrou");
       blk.appendChild(rule);
+      // Un seul choix par rubrique, et il est déjà fait : on l'affiche au lieu
+      // de laisser taper dans le vide.
+      if(verrou){ card.appendChild(blk); return; }
       var opts = document.createElement("div"); opts.className = "opts";
       r.articles.forEach(function(a){
         var q = (p.choix[r.id] && p.choix[r.id][a.id]) || 0;

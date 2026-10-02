@@ -180,6 +180,15 @@ begin
         'reste',   (c.montant - coalesce((select sum(pc.montant_affecte)
                       from paiement_commande pc where pc.commande_id = c.id), 0))::int,
         'statut',  c.statut,
+        -- le détail par rubrique, pour que la page sache ce qui est déjà pris :
+        -- sans ça, elle laissait choisir un second plat du jour que le serveur
+        -- refusait ensuite — le refus était juste, l'avoir laissé proposer non
+        'pris',    (select coalesce(jsonb_object_agg(x.rub, x.nom), '{}'::jsonb)
+                      from (select a.rubrique_id::text as rub,
+                                   string_agg(a.nom, ', ' order by a.nom) as nom
+                              from ligne l join article a on a.id = l.article_id
+                             where l.commande_id = c.id
+                             group by a.rubrique_id) x),
         'detail',  (select string_agg(a.nom || case when l.qte>1 then ' × '||l.qte else '' end, ' + ')
                       from ligne l join article a on a.id = l.article_id
                      where l.commande_id = c.id)) as d
@@ -322,6 +331,9 @@ begin
       -- sont ouvertes : la cuisine n'a pas commencé et la personne paiera la
       -- différence. Le recalcul la remet en « dû » pour le seul complément.
       if v_statut = 'annule' then
+        -- on réutilise la ligne (contrainte d'unicité) mais on repart de zéro :
+        -- garder les anciens plats ferait réapparaître ce qui vient d'être annulé
+        delete from ligne where commande_id = v_cid;
         update commande set statut = 'du' where id = v_cid;
       end if;
     else
@@ -395,6 +407,56 @@ begin
                         where commande_id = c.id) pc on true
    where c.id = any(v_ids);
   return jsonb_build_object('commandes', to_jsonb(v_ids), 'total', v_total);
+end $$;
+
+-- ---------------------------------------------------------------------
+-- 3 bis. Annuler sa commande
+-- ---------------------------------------------------------------------
+-- Une réunion tombe, on s'est trompé de plat : sans ce bouton, la personne
+-- écrit au traiteur, et c'est précisément le message qu'on voulait supprimer.
+-- Une seule limite, et elle est réelle : si le paiement est parti, il est
+-- parti — chez Wave, pas chez nous. On ne peut pas le rappeler, donc on
+-- renvoie vers le traiteur en disant pourquoi.
+create or replace function fn_annuler(p_slug text, p_appareil text, p_commande uuid)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare v_site site; v_moi personne; v_c commande; v_paye int;
+begin
+  v_site := fn_site(p_slug);
+  if v_site.id is null then raise exception 'Site inconnu'; end if;
+
+  if (now() at time zone 'Africa/Dakar')::time >= v_site.cloture then
+    raise exception 'Les commandes sont closes depuis % : vois avec le traiteur.',
+      to_char(v_site.cloture,'HH24:MI');
+  end if;
+
+  select * into v_moi from personne
+   where site_id = v_site.id and appareil = p_appareil and fusionnee_vers is null;
+  if not found then raise exception 'Appareil non inscrit'; end if;
+
+  select * into v_c from commande
+   where id = p_commande and site_id = v_site.id and jour = fn_aujourdhui()
+   for update;
+  if not found then raise exception 'Commande introuvable'; end if;
+  if v_c.statut = 'annule' then raise exception 'Cette commande est déjà annulée'; end if;
+
+  -- la sienne, ou une qu'on a passée pour quelqu'un d'autre
+  if v_c.personne_id <> v_moi.id
+     and coalesce(v_c.commandee_par, '00000000-0000-0000-0000-000000000000'::uuid) <> v_moi.id then
+    raise exception 'Cette commande n''est pas la tienne';
+  end if;
+
+  select coalesce(sum(montant_affecte),0) into v_paye
+    from paiement_commande where commande_id = v_c.id;
+  if v_paye > 0 then
+    raise exception 'Cette commande est déjà réglée (% F versés) : seul le traiteur peut l''annuler.', v_paye;
+  end if;
+
+  -- l'ordre compte : le statut d'abord, les lignes ensuite. fn_recalc respecte
+  -- « annulé » ; l'inverse ferait passer la commande à « payé » à 0 franc.
+  update commande set statut = 'annule' where id = v_c.id;
+  delete from ligne where commande_id = v_c.id;
+
+  return jsonb_build_object('commande', v_c.id, 'annulee', true);
 end $$;
 
 -- ---------------------------------------------------------------------
@@ -493,6 +555,7 @@ begin
     execute format('grant execute on function fn_suggestions(text,text)           to %I', r.rolname);
     execute format('grant execute on function fn_inscrire(text,text,text,text)    to %I', r.rolname);
     execute format('grant execute on function fn_commander(text,text,jsonb)       to %I', r.rolname);
+    execute format('grant execute on function fn_annuler(text,text,uuid)         to %I', r.rolname);
     execute format('grant execute on function fn_a_regler(text,text)              to %I', r.rolname);
     execute format('grant execute on function fn_declarer_paiement(text,text,text,uuid[],text) to %I', r.rolname);
     -- les fonctions internes ne sont pas une surface publique

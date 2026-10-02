@@ -122,6 +122,28 @@ h1{font-size:21px} h2{font-size:17px}
   .avance{font-size:12.5px;color:var(--ink-2);margin:0 0 4px}
   .avance b{font-family:var(--display);color:var(--good)}
   .avance.reste b{color:var(--accent)}
+  .voile{position:fixed;inset:0;background:rgba(20,15,12,.45);display:none;z-index:20}
+  .voile.on{display:block}
+  .panneau{position:fixed;left:0;right:0;bottom:0;max-height:88vh;overflow-y:auto;z-index:21;
+    background:var(--surface);border-radius:16px 16px 0 0;padding:20px 16px
+    calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:.22s;
+    max-width:560px;margin:0 auto}
+  .panneau.on{transform:translateY(0)}
+  .poignee{width:38px;height:4px;border-radius:99px;background:var(--line-strong);margin:0 auto 14px}
+  .lab{display:block;font-size:12.5px;color:var(--ink-2);margin-top:12px}
+  .lab input,.lab select{display:block;width:100%;margin-top:5px;padding:11px;
+    border:1.5px solid var(--line);border-radius:10px;background:var(--surface);
+    color:var(--ink);font:inherit}
+  .lab input:focus,.lab select:focus{outline:none;border-color:var(--accent)}
+  .plats{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+  .plat2{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);
+    border-radius:10px;padding:10px 11px;cursor:pointer;background:var(--surface)}
+  .plat2.on{border-color:var(--accent);background:var(--accent-soft)}
+  .plat2 .n{flex:1;min-width:0;font-size:14px;text-align:left;overflow-wrap:break-word}
+  .plat2 .p{font-family:var(--display);font-weight:600;font-size:13px;flex:none}
+  .plat2:disabled{opacity:.45;cursor:not-allowed}
+  .rubt{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+    margin:14px 0 0;font-family:var(--display);font-weight:600}
 </style>
 </head>
 <body>
@@ -159,6 +181,7 @@ h1{font-size:21px} h2{font-size:17px}
       <button class="tab" data-v="monde">Impayés<b id="n-monde">—</b></button>
     </div>
 
+    <button class="btn ghost sm" id="go-saisir">Ajouter une commande</button>
     <div class="card" id="v-cuisine"></div>
     <div id="v-argent" hidden></div>
     <div id="v-monde" hidden></div>
@@ -167,6 +190,8 @@ h1{font-size:21px} h2{font-size:17px}
   </div>
 
 </div>
+<div class="voile" id="voile"></div>
+<div class="panneau" id="panneau"><div class="poignee"></div><div id="panneau-corps"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -580,6 +605,105 @@ var CONFIG = {
     }).catch(function(){
       bouton.textContent = "Capture"; toast("Capture introuvable");
     });
+  }
+
+  /* ---------- saisir une commande pour quelqu'un ---------- */
+  var CONF = null;
+  function ouvrirP(c){
+    $("panneau-corps").innerHTML = ""; $("panneau-corps").appendChild(c);
+    $("voile").classList.add("on"); $("panneau").classList.add("on");
+  }
+  function fermerP(){ $("voile").classList.remove("on"); $("panneau").classList.remove("on"); }
+  $("voile").addEventListener("click", fermerP);
+
+  $("go-saisir").addEventListener("click", function(){
+    var b = this; b.disabled = true;
+    // le menu vient de la configuration : pas besoin d'une lecture de plus
+    (CONF ? Promise.resolve(CONF) : rpc("fn_config"))
+      .then(function(c){ CONF = c; ficheSaisie(); })
+      .catch(function(e){ toast(e.message); })
+      .then(function(){ b.disabled = false; });
+  });
+
+  function ficheSaisie(){
+    var choix = {}, f = document.createElement("div");
+    var h = document.createElement("h2"); h.textContent = "Ajouter une commande";
+    var sb = document.createElement("p"); sb.className = "sub";
+    sb.textContent = "Pour quelqu'un qui t'a appelée. L'heure de clôture ne t'arrête pas.";
+    f.appendChild(h); f.appendChild(sb);
+
+    // entreprise
+    var l1 = document.createElement("label"); l1.className = "lab"; l1.textContent = "Entreprise";
+    var sel = document.createElement("select"); sel.id = "sa-site";
+    (DATA.sites||[]).forEach(function(x){
+      var o = document.createElement("option"); o.value = x.slug; o.textContent = x.nom;
+      if(SITE === x.slug) o.selected = true;
+      sel.appendChild(o);
+    });
+    l1.appendChild(sel); f.appendChild(l1);
+
+    var l2 = document.createElement("label"); l2.className = "lab"; l2.textContent = "Nom de la personne";
+    var inp = document.createElement("input"); inp.id = "sa-nom"; inp.type = "text";
+    inp.placeholder = "Prénom et nom"; inp.autocomplete = "off";
+    l2.appendChild(inp); f.appendChild(l2);
+
+    var jourDOW = new Date(DATA.jour + "T12:00:00").getDay();
+    jourDOW = jourDOW === 0 ? 7 : jourDOW;
+
+    var zone = document.createElement("div");
+    (CONF.rubriques||[]).forEach(function(r){
+      var dispo = r.articles.filter(function(a){
+        return a.actif && (!r.par_jour || a.jour === jourDOW);
+      });
+      if(!dispo.length) return;
+      var t = document.createElement("p"); t.className = "rubt"; t.textContent = r.nom;
+      zone.appendChild(t);
+      var box = document.createElement("div"); box.className = "plats";
+      dispo.forEach(function(a){
+        var btn = document.createElement("button"); btn.type = "button"; btn.className = "plat2";
+        btn.innerHTML = '<span class="n"></span><span class="p"></span>';
+        btn.querySelector(".n").textContent = a.nom;
+        btn.querySelector(".p").textContent = r.offert ? "offert" : fcfa(a.prix);
+        btn.addEventListener("click", function(){
+          if(r.mode === "unique"){
+            var etait = choix[r.id] === a.id;
+            delete choix[r.id];
+            Array.prototype.forEach.call(box.children, function(x){ x.classList.remove("on"); });
+            if(!etait){ choix[r.id] = a.id; btn.classList.add("on"); }
+          } else {
+            choix[r.id] = choix[r.id] || {};
+            if(choix[r.id][a.id]){ delete choix[r.id][a.id]; btn.classList.remove("on"); }
+            else { choix[r.id][a.id] = 1; btn.classList.add("on"); }
+          }
+        });
+        box.appendChild(btn);
+      });
+      zone.appendChild(box);
+    });
+    f.appendChild(zone);
+
+    var ok = document.createElement("button"); ok.className = "btn"; ok.textContent = "Enregistrer";
+    ok.addEventListener("click", function(){
+      var lignes = [];
+      for(var rid in choix){
+        if(typeof choix[rid] === "string") lignes.push({ article: choix[rid], qte: 1 });
+        else for(var aid in choix[rid]) lignes.push({ article: aid, qte: 1 });
+      }
+      if(!lignes.length){ toast("Choisis au moins un plat"); return; }
+      if(!$("sa-nom").value.trim()){ toast("Écris le nom"); return; }
+      ok.disabled = true; ok.textContent = "…";
+      rpc("fn_commander_pour", { p_site: $("sa-site").value, p_nom: $("sa-nom").value,
+            p_lignes: lignes, p_jour: DATA.jour })
+        .then(function(res){
+          fermerP(); toast(res.nom + " · " + fcfa(res.montant)); return charger();
+        })
+        .catch(function(e){ toast(e.message); ok.disabled = false; ok.textContent = "Enregistrer"; });
+    });
+    f.appendChild(ok);
+    var an = document.createElement("button"); an.className = "btn ghost sm";
+    an.textContent = "Annuler"; an.addEventListener("click", fermerP);
+    f.appendChild(an);
+    ouvrirP(f);
   }
 
   /* ---------- actions ---------- */
