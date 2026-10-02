@@ -56,6 +56,54 @@ returns date language sql stable as $$
 $$;
 
 -- ---------------------------------------------------------------------
+-- 0 bis. Montant et statut d'une commande : recalculés, jamais saisis
+-- ---------------------------------------------------------------------
+-- Les deux vont ensemble. Le statut dépend du montant, donc TOUT changement
+-- de lignes doit le refaire — pas seulement un paiement. Sans cela, ajouter
+-- un jus à une commande déjà réglée laissait le statut à « payé » : le
+-- complément dû n'apparaissait nulle part, ni pour l'employé ni pour le
+-- traiteur. C'est la raison pour laquelle l'ajout était interdit ; c'est
+-- l'interdiction qui était le mauvais remède.
+create or replace function fn_recalc(p_cmd uuid) returns void
+language plpgsql as $$
+begin
+  update commande c
+     set montant = coalesce((select sum(l.qte * l.prix_unitaire)
+                               from ligne l where l.commande_id = p_cmd), 0)
+   where c.id = p_cmd;
+
+  update commande c
+     set statut = case
+       when c.statut = 'annule' then 'annule'
+       when coalesce((select sum(pc.montant_affecte) from paiement_commande pc
+                       where pc.commande_id = p_cmd), 0) >= c.montant then 'paye'
+       else 'du' end
+   where c.id = p_cmd;
+end $$;
+
+create or replace function fn_maj_montant() returns trigger
+language plpgsql as $$
+begin
+  perform fn_recalc(coalesce(new.commande_id, old.commande_id));
+  return null;
+end $$;
+
+create or replace function fn_maj_statut() returns trigger
+language plpgsql as $$
+begin
+  perform fn_recalc(coalesce(new.commande_id, old.commande_id));
+  return null;
+end $$;
+
+drop trigger if exists trg_maj_montant on ligne;
+create trigger trg_maj_montant after insert or update or delete on ligne
+for each row execute function fn_maj_montant();
+
+drop trigger if exists trg_maj_statut on paiement_commande;
+create trigger trg_maj_statut after insert or update or delete on paiement_commande
+for each row execute function fn_maj_statut();
+
+-- ---------------------------------------------------------------------
 -- 1. Le menu du jour, avec le reste disponible et le compte social
 -- ---------------------------------------------------------------------
 -- la signature a changé (ajout de p_appareil) : on retire l'ancienne,
@@ -129,6 +177,8 @@ begin
         'nom',     pe.nom,
         'moi',     (c.personne_id = mo.id),
         'montant', c.montant,
+        'reste',   (c.montant - coalesce((select sum(pc.montant_affecte)
+                      from paiement_commande pc where pc.commande_id = c.id), 0))::int,
         'statut',  c.statut,
         'detail',  (select string_agg(a.nom || case when l.qte>1 then ' × '||l.qte else '' end, ' + ')
                       from ligne l join article a on a.id = l.article_id
@@ -268,9 +318,9 @@ begin
         raise exception '% a déjà commandé aujourd''hui',
           split_part((select nom from personne where id = v_benef), ' ', 1);
       end if;
-      if v_statut = 'paye' then
-        raise exception 'Ta commande du jour est déjà réglée. Pour la changer, vois avec le traiteur.';
-      end if;
+      -- Une commande déjà réglée peut être complétée tant que les commandes
+      -- sont ouvertes : la cuisine n'a pas commencé et la personne paiera la
+      -- différence. Le recalcul la remet en « dû » pour le seul complément.
       if v_statut = 'annule' then
         update commande set statut = 'du' where id = v_cid;
       end if;
@@ -337,7 +387,13 @@ begin
     end loop;
   end loop;
 
-  select coalesce(sum(montant),0) into v_total from commande where id = any(v_ids);
+  -- ce qui reste dû, pas le total de la commande : si une partie est déjà
+  -- réglée, l'écran ne doit annoncer que la différence
+  select coalesce(sum(c.montant - coalesce(pc.affecte,0)),0)::int into v_total
+    from commande c
+    left join lateral (select sum(montant_affecte) as affecte from paiement_commande
+                        where commande_id = c.id) pc on true
+   where c.id = any(v_ids);
   return jsonb_build_object('commandes', to_jsonb(v_ids), 'total', v_total);
 end $$;
 
@@ -358,6 +414,8 @@ begin
             'moi', c.personne_id = v_moi.id,
             'par_moi', c.commandee_par = v_moi.id,
             'montant', c.montant,
+            'reste', (c.montant - coalesce((select sum(pc.montant_affecte)
+                        from paiement_commande pc where pc.commande_id = c.id), 0))::int,
             'detail', (select string_agg(a.nom || case when l.qte>1 then ' × '||l.qte else '' end, ' + ')
                          from ligne l join article a on a.id=l.article_id
                         where l.commande_id = c.id)) order by c.personne_id = v_moi.id desc, pe.nom), '[]'::jsonb)
@@ -389,20 +447,33 @@ begin
      and jour = fn_aujourdhui() and statut = 'du'
    for update;
 
-  select coalesce(sum(montant),0) into v_total from commande
-   where id = any(p_commandes) and site_id = v_site.id
-     and jour = fn_aujourdhui() and statut = 'du';
-  if v_total = 0 then raise exception 'Ces commandes sont déjà réglées'; end if;
+  -- on règle le RESTE dû, pas le total : une commande complétée après un
+  -- premier paiement ne doit être facturée que de la différence
+  select coalesce(sum(c.montant - coalesce(pc.affecte,0)),0)::int into v_total
+    from commande c
+    left join lateral (select sum(montant_affecte) as affecte from paiement_commande
+                        where commande_id = c.id) pc on true
+   where c.id = any(p_commandes) and c.site_id = v_site.id
+     and c.jour = fn_aujourdhui() and c.statut = 'du';
+  if v_total <= 0 then raise exception 'Ces commandes sont déjà réglées'; end if;
 
   insert into paiement (site_id, personne_id, moyen_id, montant, preuve_url, jour)
   values (v_site.id, v_moi.id, v_moyen, v_total, p_preuve, fn_aujourdhui())
   returning id into v_pay;
 
-  for v_c in select id, montant, personne_id from commande
-              where id = any(p_commandes) and site_id = v_site.id
-                and jour = fn_aujourdhui() and statut = 'du' loop
+  for v_c in select c.id, c.personne_id,
+                    (c.montant - coalesce(pc.affecte,0))::int as reste
+               from commande c
+               left join lateral (select sum(montant_affecte) as affecte
+                                    from paiement_commande where commande_id = c.id) pc on true
+              where c.id = any(p_commandes) and c.site_id = v_site.id
+                and c.jour = fn_aujourdhui() and c.statut = 'du'
+                and (c.montant - coalesce(pc.affecte,0)) > 0 loop
+    -- un second versement sur la même commande s'ajoute au premier
     insert into paiement_commande (paiement_id, commande_id, montant_affecte)
-    values (v_pay, v_c.id, v_c.montant);
+    values (v_pay, v_c.id, v_c.reste)
+    on conflict (paiement_id, commande_id) do update
+      set montant_affecte = paiement_commande.montant_affecte + excluded.montant_affecte;
     if v_c.personne_id <> v_moi.id then
       update commande set commandee_par = coalesce(commandee_par, v_moi.id) where id = v_c.id;
     end if;

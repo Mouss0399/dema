@@ -410,19 +410,20 @@ var CONFIG = {
   function rendreDeja(liste){
     var moi   = liste.filter(function(c){ return c.moi; })[0] || null;
     var pour  = liste.filter(function(c){ return !c.moi; });
-    var du    = liste.filter(function(c){ return c.statut === "du"; });
+    var du    = liste.filter(function(c){ return (c.reste || 0) > 0; });
     var total = liste.reduce(function(s2,c){ return s2 + c.montant; }, 0);
 
     $("deja-titre").textContent = moi ? "Tu as déjà commandé" : "Tu as commandé pour un collègue";
     $("deja-sub").textContent = du.length
-      ? "Il reste " + fcfa(du.reduce(function(s2,c){ return s2+c.montant; },0)) + " à régler."
+      ? "Il reste " + fcfa(du.reduce(function(s2,c){ return s2 + c.reste; },0)) + " à régler."
       : "Tout est réglé. Bon appétit.";
 
     var r = $("deja-recap"); r.innerHTML = "";
     liste.forEach(function(c){
       var d = document.createElement("div"); d.innerHTML = "<span></span><span></span>";
       d.children[0].textContent = (c.moi ? "Ma commande" : pre(c.nom))
-        + (c.statut === "paye" ? " · réglée" : "");
+        + ((c.reste || 0) <= 0 ? " · réglée"
+           : (c.reste < c.montant ? " · reste " + fcfa(c.reste) : ""));
       d.children[1].textContent = (c.detail || "—") + " · " + fcfa(c.montant);
       r.appendChild(d);
     });
@@ -738,14 +739,15 @@ var CONFIG = {
         rendreSettle(LISTE); rendreMoyens();
       });
       row.appendChild(hit);
-      var px = document.createElement("span"); px.className = "pr"; px.textContent = fcfa(c.montant);
+      var px = document.createElement("span"); px.className = "pr";
+      px.textContent = fcfa(c.reste !== undefined ? c.reste : c.montant);
       row.appendChild(px); box.appendChild(row);
     });
     $("pay-total").textContent = fcfa(somme());
   }
   function somme(){
     return LISTE.filter(function(c){ return aRegler.indexOf(c.id) > -1; })
-                .reduce(function(s,c){ return s + c.montant; }, 0);
+                .reduce(function(s,c){ return s + (c.reste !== undefined ? c.reste : c.montant); }, 0);
   }
   function rendreMoyens(){
     var box = $("moyens"); box.innerHTML = "";

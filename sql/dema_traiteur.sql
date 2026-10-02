@@ -11,6 +11,14 @@
 set search_path = public, extensions;
 
 -- ---------------------------------------------------------------------
+-- Mise à niveau d'une base déjà en service : le pointage des règlements.
+-- Sans effet si les colonnes existent déjà, donc rejouable sans risque.
+-- (Sur une installation neuve, dema_schema.sql les crée directement.)
+-- ---------------------------------------------------------------------
+alter table paiement add column if not exists pointe    boolean not null default false;
+alter table paiement add column if not exists pointe_le timestamptz;
+
+-- ---------------------------------------------------------------------
 -- 1. Qui a le droit de voir quoi
 -- ---------------------------------------------------------------------
 -- user_id est l'identifiant du compte Supabase (auth.users.id). Pas de clé
@@ -161,12 +169,13 @@ begin
 
   -- les règlements déclarés, et pour qui : ce qui remplace les captures
   select coalesce(jsonb_agg(jsonb_build_object(
+           'id', q.id,
            'site', q.site, 'qui', q.qui, 'moyen', q.moyen, 'montant', q.montant,
-           'heure', q.heure, 'preuve', q.preuve, 'pour', q.pour)
+           'heure', q.heure, 'preuve', q.preuve, 'pointe', q.pointe, 'pour', q.pour)
            order by q.cree_le desc), '[]'::jsonb)
     into v_paiements
     from (select s.nom as site, pe.nom as qui, coalesce(m.nom,'Non précisé') as moyen,
-                 p.montant, p.cree_le, p.preuve_url as preuve,
+                 p.id, p.montant, p.cree_le, p.preuve_url as preuve, p.pointe,
                  to_char(p.cree_le at time zone 'Africa/Dakar','HH24:MI') as heure,
                  (select coalesce(jsonb_agg(pe2.nom order by pe2.nom), '[]'::jsonb)
                     from paiement_commande pc
@@ -213,6 +222,34 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
+-- 3 bis. Pointer un règlement
+-- ---------------------------------------------------------------------
+-- Le geste réel du traiteur : ouvrir Wave, descendre sa liste, cocher ce qui
+-- correspond. Ce qui reste non coché à la fin est exactement ce qu'il faut
+-- éclaircir. Sans cette trace, elle regarde une capture et, le lendemain, ne
+-- sait plus lesquelles elle avait déjà vérifiées.
+create or replace function fn_pointer(p_paiement uuid, p_pointe boolean)
+returns jsonb language plpgsql security definer
+set search_path = public, extensions as $$
+declare v_t uuid; v_ok boolean;
+begin
+  v_t := fn_mon_traiteur();
+  if v_t is null then
+    raise exception 'Ce compte n''est rattaché à aucun traiteur.';
+  end if;
+
+  update paiement p
+     set pointe = coalesce(p_pointe, true),
+         pointe_le = case when coalesce(p_pointe, true) then now() else null end
+   where p.id = p_paiement
+     and p.site_id in (select id from site where traiteur_id = v_t)
+  returning true into v_ok;
+
+  if v_ok is null then raise exception 'Règlement introuvable.'; end if;
+  return jsonb_build_object('id', p_paiement, 'pointe', coalesce(p_pointe, true));
+end $$;
+
+-- ---------------------------------------------------------------------
 -- 4. Fermeture : ces fonctions ne sont PAS publiques
 -- ---------------------------------------------------------------------
 -- PostgreSQL donne l'exécution à tout le monde par défaut. On retire, puis on
@@ -222,8 +259,10 @@ do $$
 begin
   execute 'revoke execute on function fn_mon_traiteur()         from public';
   execute 'revoke execute on function fn_tableau(date,text)     from public';
+  execute 'revoke execute on function fn_pointer(uuid,boolean)  from public';
   if exists (select 1 from pg_roles where rolname = 'authenticated') then
     execute 'grant execute on function fn_tableau(date,text) to authenticated';
+    execute 'grant execute on function fn_pointer(uuid,boolean) to authenticated';
   end if;
   if exists (select 1 from pg_roles where rolname = 'anon') then
     execute 'revoke all on compte from anon';

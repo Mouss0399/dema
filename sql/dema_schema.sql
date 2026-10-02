@@ -23,8 +23,6 @@ drop view if exists v_doublon, v_manquant, v_canal, v_cuisine cascade;
 drop table if exists paiement_commande, paiement, ligne, commande,
                      personne, article, rubrique, moyen_paiement,
                      site, traiteur cascade;
-drop function if exists fn_maj_statut() cascade;
-drop function if exists fn_maj_montant() cascade;
 drop function if exists fn_article_jour() cascade;
 drop function if exists fn_norm(text) cascade;
 -- ---------------------------------------------------------------------
@@ -177,6 +175,8 @@ create table paiement (
   montant     integer not null check (montant > 0),
   preuve_url  text,                                     -- capture, purgée à 60 j
   reference   text,                                     -- référence API (phase 3)
+  pointe      boolean not null default false,           -- rapproché du relevé par le traiteur
+  pointe_le   timestamptz,
   jour        date not null,
   cree_le     timestamptz not null default now()
 );
@@ -193,36 +193,9 @@ create index idx_pc_commande on paiement_commande (commande_id);
 -- ---------------------------------------------------------------------
 -- 6. Montant et statut recalculés, jamais saisis
 -- ---------------------------------------------------------------------
-create or replace function fn_maj_montant() returns trigger
-language plpgsql as $$
-declare v_cmd uuid := coalesce(new.commande_id, old.commande_id);
-begin
-  update commande c
-     set montant = coalesce((select sum(l.qte * l.prix_unitaire)
-                               from ligne l where l.commande_id = v_cmd), 0)
-   where c.id = v_cmd;
-  return null;
-end $$;
-
-create trigger trg_maj_montant after insert or update or delete on ligne
-for each row execute function fn_maj_montant();
-
-create or replace function fn_maj_statut() returns trigger
-language plpgsql as $$
-declare v_cmd uuid := coalesce(new.commande_id, old.commande_id);
-begin
-  update commande c
-     set statut = case
-       when c.statut = 'annule' then 'annule'
-       when coalesce((select sum(pc.montant_affecte) from paiement_commande pc
-                       where pc.commande_id = v_cmd), 0) >= c.montant then 'paye'
-       else 'du' end
-   where c.id = v_cmd;
-  return null;
-end $$;
-
-create trigger trg_maj_statut after insert or update or delete on paiement_commande
-for each row execute function fn_maj_statut();
+-- Le calcul du montant et du statut vit dans dema_api.sql, avec le reste de la
+-- logique : il a dû changer après coup, et un fichier qu'on peut rejouer sans
+-- rien effacer est le bon endroit pour ça.
 
 -- ---------------------------------------------------------------------
 -- 7. Les trois vues qui font l'écran du traiteur

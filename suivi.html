@@ -113,6 +113,15 @@ h1{font-size:21px} h2{font-size:17px}
   opacity:0;pointer-events:none;transition:.18s;max-width:90vw;text-align:center;z-index:9}
 .toast.on{opacity:1;transform:translateX(-50%)}
 .shot{display:block;max-width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--line)}
+  .pt{flex:none;width:26px;height:26px;border-radius:8px;border:1.5px solid var(--line-strong);
+    background:var(--surface);cursor:pointer;padding:0;display:flex;align-items:center;
+    justify-content:center;color:transparent;font-size:15px;line-height:1}
+  .pt.on{border-color:var(--good);background:var(--good-soft);color:var(--good)}
+  .pt:disabled{opacity:.4;cursor:wait}
+  .row.fait .who b{color:var(--ink-3)}
+  .avance{font-size:12.5px;color:var(--ink-2);margin:0 0 4px}
+  .avance b{font-family:var(--display);color:var(--good)}
+  .avance.reste b{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -266,7 +275,7 @@ var CONFIG = {
   }
 
   /* ---------- état ---------- */
-  var DATA = null, JOUR = null, SITE = null, VUE = "cuisine";
+  var DATA = null, JOUR = null, SITE = null, VUE = "cuisine", FILTRE = "tous";
 
   function dateFr(iso){
     return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR",
@@ -398,33 +407,98 @@ var CONFIG = {
     }
     box.appendChild(c2);
 
-    // les règlements déclarés, avec la capture si elle existe
+    // Les règlements déclarés. C'est ici qu'elle rapproche : elle ouvre Wave,
+    // descend sa liste, coche. Ce qui reste décoché à la fin est exactement ce
+    // qu'elle doit éclaircir.
+    var tous = d.paiements || [];
+    var faits = tous.filter(function(p){ return p.pointe; }).length;
+    var avecCapture = tous.filter(function(p){ return !!p.preuve; }).length;
+
     var c3 = document.createElement("div"); c3.className = "card";
     var e3 = document.createElement("p"); e3.className = "eyebrow";
-    e3.textContent = "Règlements déclarés (" + (d.paiements||[]).length + ")";
+    e3.textContent = "Règlements déclarés (" + tous.length + ")";
     c3.appendChild(e3);
-    if(!(d.paiements||[]).length){
+
+    if(!tous.length){
       c3.innerHTML += '<p class="vide">Aucun règlement déclaré.</p>';
-    } else {
-      d.paiements.forEach(function(p){
-        var r = document.createElement("div"); r.className = "row";
-        var w = document.createElement("div"); w.className = "who";
-        w.innerHTML = "<b></b><span></span>";
-        w.children[0].textContent = p.qui;
-        var det = p.moyen + " · " + p.heure;
-        if((d.sites||[]).length > 1) det = p.site + " · " + det;
-        if((p.pour||[]).length) det += " · pour " + p.pour.map(pre).join(", ");
-        w.children[1].textContent = det;
-        var a = document.createElement("div"); a.className = "amt ok"; a.textContent = fcfa(p.montant);
-        r.appendChild(w); r.appendChild(a);
-        if(p.preuve){
-          var b = document.createElement("button"); b.className = "act"; b.textContent = "Capture";
-          b.addEventListener("click", function(){ voirCapture(p.preuve, r, b); });
-          r.appendChild(b);
-        }
-        c3.appendChild(r);
-      });
+      box.appendChild(c3);
+      return;
     }
+
+    var av = document.createElement("p");
+    av.className = "avance" + (faits < tous.length ? " reste" : "");
+    av.innerHTML = "<b></b><span></span>";
+    av.children[0].textContent = faits + " sur " + tous.length;
+    av.children[1].textContent = " pointés · " + avecCapture
+      + (avecCapture > 1 ? " avec capture" : " avec capture");
+    c3.appendChild(av);
+
+    var FILTRES = [["tous","Tous"], ["apointer","À pointer"],
+                   ["capture","Avec capture"], ["sans","Sans capture"]];
+    var ch = document.createElement("div"); ch.className = "chips";
+    FILTRES.forEach(function(f){
+      var b = document.createElement("button");
+      b.className = "chip" + (FILTRE === f[0] ? " on" : "");
+      b.textContent = f[1];
+      b.addEventListener("click", function(){ FILTRE = f[0]; rendre(); });
+      ch.appendChild(b);
+    });
+    c3.appendChild(ch);
+
+    var liste = tous.filter(function(p){
+      if(FILTRE === "apointer") return !p.pointe;
+      if(FILTRE === "capture")  return !!p.preuve;
+      if(FILTRE === "sans")     return !p.preuve;
+      return true;
+    });
+    if(!liste.length){
+      var v = document.createElement("p"); v.className = "vide";
+      v.textContent = FILTRE === "apointer" ? "Tout est pointé." : "Rien dans ce filtre.";
+      c3.appendChild(v);
+    }
+
+    liste.forEach(function(p){
+      var r = document.createElement("div"); r.className = "row" + (p.pointe ? " fait" : "");
+
+      var pt = document.createElement("button");
+      pt.className = "pt" + (p.pointe ? " on" : "");
+      pt.type = "button"; pt.textContent = "✓";
+      pt.setAttribute("aria-label", p.pointe ? "Dépointer " + p.qui : "Pointer " + p.qui);
+      pt.addEventListener("click", function(){
+        // on coche tout de suite, on défait si le serveur refuse : au marché,
+        // le réseau rame et attendre une seconde par ligne est insupportable
+        var avant = p.pointe;
+        p.pointe = !avant;
+        pt.classList.toggle("on", p.pointe);
+        r.classList.toggle("fait", p.pointe);
+        pt.disabled = true;
+        rpc("fn_pointer", { p_paiement: p.id, p_pointe: p.pointe })
+          .then(function(){ rendre(); })
+          .catch(function(e){
+            p.pointe = avant;
+            pt.classList.toggle("on", avant); r.classList.toggle("fait", avant);
+            pt.disabled = false; toast(e.message);
+          });
+      });
+      r.appendChild(pt);
+
+      var w = document.createElement("div"); w.className = "who";
+      w.innerHTML = "<b></b><span></span>";
+      w.children[0].textContent = p.qui;
+      var det = p.moyen + " · " + p.heure;
+      if((d.sites||[]).length > 1) det = p.site + " · " + det;
+      if((p.pour||[]).length) det += " · pour " + p.pour.map(pre).join(", ");
+      if(!p.preuve) det += " · sans capture";
+      w.children[1].textContent = det;
+      var a = document.createElement("div"); a.className = "amt ok"; a.textContent = fcfa(p.montant);
+      r.appendChild(w); r.appendChild(a);
+      if(p.preuve){
+        var b = document.createElement("button"); b.className = "act"; b.textContent = "Capture";
+        b.addEventListener("click", function(){ voirCapture(p.preuve, r, b); });
+        r.appendChild(b);
+      }
+      c3.appendChild(r);
+    });
     box.appendChild(c3);
   }
 
