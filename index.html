@@ -173,7 +173,8 @@ h1{font-size:21px} h2{font-size:18px}
     <p class="note" id="who-note" hidden></p>
     <label class="lab" for="nom">Ton nom<input type="text" id="nom" placeholder="Prénom et nom" autocomplete="name"></label>
     <div class="sugg" id="suggest"></div>
-    <label class="lab" for="tel">Ton numéro <span style="color:var(--ink-3)">(facultatif)</span><input type="tel" id="tel" placeholder="77 000 00 00" autocomplete="tel"></label>
+    <label class="lab" for="tel">Ton numéro WhatsApp<input type="tel" id="tel" placeholder="77 000 00 00" autocomplete="tel" inputmode="tel"></label>
+    <p class="note">C'est lui qui te retrouve si tu changes de téléphone ou de navigateur.</p>
     <button class="btn" id="go-inscrire">C'est parti</button>
     <p class="note">Sert uniquement à te joindre s'il manque un règlement. Aucun mot de passe, aucun compte.</p>
   </div>
@@ -402,8 +403,8 @@ var CONFIG = {
       // l'inscription avec le nom déjà écrit, au lieu d'échouer plus loin.
       if(MON_NOM && m.inscrit === false){
         $("nom").value = MON_NOM;
-        $("who-note").textContent = "Ce téléphone te connaît, mais pas encore ce menu. "
-          + "Vérifie ton nom et reprends.";
+        $("who-note").textContent = "Ce navigateur ne te connaît pas encore ici. "
+          + "Écris ton nom et ton numéro : si tu es déjà inscrit, tu retrouves ta fiche.";
         $("who-note").hidden = false;
         MON_NOM = null;
         try { localStorage.removeItem("dema_nom"); } catch(e){}
@@ -520,15 +521,21 @@ var CONFIG = {
 
   function inscrire(){
     var v = $("nom").value.replace(/\s+/g," ").trim();
+    var t = $("tel").value.trim();
     if(v.length < 2){ toast("Écris ton nom d'abord"); $("nom").focus(); return; }
+    if(t.replace(/\D/g,"").length < 9){
+      toast("Écris ton numéro, comme 77 123 45 67"); $("tel").focus(); return;
+    }
     if(enCours) return; enCours = true; erreur(null);
-    rpc("fn_inscrire", { p_slug: CONFIG.site, p_nom: v,
-                         p_tel: $("tel").value.trim() || null, p_appareil: APPAREIL })
+    rpc("fn_inscrire", { p_slug: CONFIG.site, p_nom: v, p_tel: t, p_appareil: APPAREIL })
       .then(function(p){
         MON_NOM = p.nom;
         try { localStorage.setItem("dema_nom", p.nom); } catch(e){}
-        toast("Bienvenue " + pre(p.nom));
-        demarrer();
+        // « repris » : ce numéro était déjà connu, on vient de rattacher ce
+        // navigateur à sa fiche. C'est le cas WhatsApp puis Chrome.
+        toast(p.repris ? "Content de te revoir, " + pre(p.nom)
+                       : "Bienvenue " + pre(p.nom));
+        return demarrer();
       })
       .catch(function(e){ erreur(e.message); })
       .then(function(){ enCours = false; });

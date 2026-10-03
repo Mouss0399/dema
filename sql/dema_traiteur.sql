@@ -113,12 +113,22 @@ begin
                 from (
                   select r.nom as rubrique, r.ordre,
                          (select coalesce(jsonb_agg(jsonb_build_object(
-                                   'nom', aa.nom, 'quantite', aa.quantite, 'limite', aa.limite)
+                                   'nom', aa.nom, 'quantite', aa.quantite,
+                                   'limite', aa.limite, 'qui', aa.qui)
                                    order by aa.quantite desc, aa.nom), '[]'::jsonb)
-                            from (select a.nom, a.limite, sum(l.qte)::int as quantite
+                            from (select a.nom, a.limite, sum(l.qte)::int as quantite,
+                                         -- qui a pris ce plat : c'est la feuille de
+                                         -- distribution. Le sondage WhatsApp montrait
+                                         -- déjà les noms sous chaque option ; sans eux,
+                                         -- elle ne sait pas à qui donner quoi à midi.
+                                         jsonb_agg(jsonb_build_object(
+                                           'nom', pe.nom, 'qte', l.qte,
+                                           'paye', c.statut = 'paye')
+                                           order by pe.nom) as qui
                                     from ligne l
                                     join commande c on c.id = l.commande_id
                                     join article a on a.id = l.article_id
+                                    join personne pe on pe.id = c.personne_id
                                    where a.rubrique_id = r.id and c.site_id = s.id
                                      and c.jour = v_jour and c.statut <> 'annule'
                                    group by a.id, a.nom, a.limite) aa) as articles
@@ -379,6 +389,155 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
+-- 3 quater. Les clients
+-- ---------------------------------------------------------------------
+-- C'est ici que la dette cesse de fuir. L'écran du jour ne montre que les
+-- impayés du jour affiché : un repas non réglé lundi disparaît de la vue dès
+-- mardi, et l'outil aide alors à oublier — pire que pas d'outil du tout.
+-- Cette liste porte le dû cumulé, toutes dates confondues.
+create or replace function fn_clients(p_site text default null, p_q text default null)
+returns jsonb language plpgsql stable security definer
+set search_path = public, extensions as $$
+declare v_t uuid; v_sites uuid[]; v_q text; v_gens jsonb; v_doublons jsonb;
+begin
+  v_t := fn_exige_traiteur();
+
+  select array_agg(id) into v_sites from site
+   where traiteur_id = v_t and (p_site is null or slug = p_site);
+  if v_sites is null then raise exception 'Aucune entreprise ne correspond.'; end if;
+
+  v_q := nullif(trim(coalesce(p_q,'')), '');
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'id', q.id, 'nom', q.nom, 'tel', q.tel, 'site', q.site,
+           'inscrit', q.inscrit, 'du', q.du, 'repas', q.repas,
+           'depense', q.depense, 'dernier', q.dernier)
+           order by q.du desc, q.dernier desc nulls last, q.nom), '[]'::jsonb)
+    into v_gens
+    from (
+      select pe.id, pe.nom, pe.tel, s.nom as site,
+             (pe.appareil is not null) as inscrit,
+             coalesce((select sum(c.montant - coalesce((select sum(pc.montant_affecte)
+                         from paiement_commande pc where pc.commande_id = c.id), 0))
+                         from commande c
+                        where c.personne_id = pe.id and c.statut = 'du'), 0)::int as du,
+             coalesce((select count(*) from commande c
+                        where c.personne_id = pe.id and c.statut <> 'annule'
+                          and c.jour > (now() at time zone 'Africa/Dakar')::date - 30), 0)::int as repas,
+             coalesce((select sum(c.montant) from commande c
+                        where c.personne_id = pe.id and c.statut <> 'annule'
+                          and c.jour > (now() at time zone 'Africa/Dakar')::date - 30), 0)::int as depense,
+             (select max(c.jour) from commande c
+               where c.personne_id = pe.id and c.statut <> 'annule') as dernier
+        from personne pe
+        join site s on s.id = pe.site_id
+       where pe.site_id = any(v_sites) and pe.fusionnee_vers is null
+         and (v_q is null
+              or pe.nom_norm like '%' || fn_norm(v_q) || '%'
+              or coalesce(pe.tel_norm,'') like '%' || coalesce(fn_norm_tel(v_q), fn_norm(v_q)) || '%')
+    ) q;
+
+  -- noms proches : à arbitrer à la main, jamais fusionnés tout seuls
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'site', d.site, 'a', d.a, 'a_id', d.a_id, 'b', d.b, 'b_id', d.b_id)
+           order by d.a), '[]'::jsonb)
+    into v_doublons
+    from (select s.nom as site, p1.nom as a, p1.id as a_id, p2.nom as b, p2.id as b_id
+            from personne p1
+            join personne p2 on p2.site_id = p1.site_id and p2.id > p1.id
+                            and p2.fusionnee_vers is null
+            join site s on s.id = p1.site_id
+           where p1.site_id = any(v_sites) and p1.fusionnee_vers is null
+             and similarity(p1.nom_norm, p2.nom_norm) > 0.55) d;
+
+  return jsonb_build_object('clients', v_gens, 'doublons', v_doublons);
+end $$;
+
+-- ---------------------------------------------------------------------
+-- Corriger une fiche
+-- ---------------------------------------------------------------------
+create or replace function fn_client_maj(p_personne uuid, p_nom text, p_tel text)
+returns jsonb language plpgsql security definer
+set search_path = public, extensions as $$
+declare v_t uuid; v_p personne;
+begin
+  v_t := fn_exige_traiteur();
+  select * into v_p from personne
+   where id = p_personne and site_id in (select id from site where traiteur_id = v_t);
+  if not found then raise exception 'Personne introuvable.'; end if;
+  if length(trim(coalesce(p_nom,''))) < 2 then raise exception 'Le nom est trop court.'; end if;
+
+  update personne set nom = trim(p_nom), tel = nullif(trim(coalesce(p_tel,'')),'')
+   where id = p_personne;
+  return jsonb_build_object('id', p_personne, 'nom', trim(p_nom));
+exception
+  when unique_violation then
+    raise exception 'Ce nom ou ce numéro est déjà utilisé par quelqu''un d''autre sur ce site.';
+end $$;
+
+-- ---------------------------------------------------------------------
+-- Fusionner deux fiches
+-- ---------------------------------------------------------------------
+-- Détecter un doublon sans pouvoir le réparer n'est que de l'agacement.
+-- Le cas délicat : les deux fiches ont une commande le MÊME jour. On ne peut
+-- pas simplement rattacher, la contrainte « une commande par personne et par
+-- jour » s'y oppose — on verse donc les plats dans la commande conservée.
+create or replace function fn_fusionner(p_garde uuid, p_absorbe uuid)
+returns jsonb language plpgsql security definer
+set search_path = public, extensions as $$
+declare
+  v_t uuid; v_g personne; v_a personne; v_c record; v_cible uuid; v_n int := 0;
+begin
+  v_t := fn_exige_traiteur();
+  if p_garde = p_absorbe then raise exception 'Ce sont les mêmes fiches.'; end if;
+
+  select * into v_g from personne
+   where id = p_garde and site_id in (select id from site where traiteur_id = v_t);
+  if not found then raise exception 'Fiche à conserver introuvable.'; end if;
+  select * into v_a from personne
+   where id = p_absorbe and site_id in (select id from site where traiteur_id = v_t);
+  if not found then raise exception 'Fiche à absorber introuvable.'; end if;
+  if v_g.site_id <> v_a.site_id then
+    raise exception 'Ces deux fiches ne sont pas dans la même entreprise.';
+  end if;
+  if v_a.fusionnee_vers is not null then raise exception 'Cette fiche est déjà fusionnée.'; end if;
+
+  for v_c in select * from commande where personne_id = v_a.id loop
+    select id into v_cible from commande
+     where personne_id = v_g.id and jour = v_c.jour and site_id = v_c.site_id;
+    if v_cible is null then
+      update commande set personne_id = v_g.id where id = v_c.id;
+    else
+      -- même jour des deux côtés : on verse les plats dans celle qu'on garde
+      insert into ligne (commande_id, article_id, qte, prix_unitaire)
+        select v_cible, l.article_id, l.qte, l.prix_unitaire
+          from ligne l where l.commande_id = v_c.id
+      on conflict (commande_id, article_id) do update
+        set qte = ligne.qte + excluded.qte;
+      update paiement_commande set commande_id = v_cible where commande_id = v_c.id;
+      delete from ligne where commande_id = v_c.id;
+      delete from commande where id = v_c.id;
+      perform fn_recalc(v_cible);
+    end if;
+    v_n := v_n + 1;
+  end loop;
+
+  update commande set commandee_par = v_g.id where commandee_par = v_a.id;
+  update paiement set personne_id = v_g.id where personne_id = v_a.id;
+
+  -- la fiche conservée hérite de ce qui lui manque
+  update personne set
+    appareil = coalesce(v_g.appareil, v_a.appareil),
+    tel      = coalesce(nullif(trim(coalesce(v_g.tel,'')),''), v_a.tel)
+   where id = v_g.id;
+
+  update personne set fusionnee_vers = v_g.id, appareil = null
+   where id = v_a.id;
+
+  return jsonb_build_object('garde', v_g.id, 'nom', v_g.nom, 'commandes', v_n);
+end $$;
+
+-- ---------------------------------------------------------------------
 -- 4. Fermeture : ces fonctions ne sont PAS publiques
 -- ---------------------------------------------------------------------
 -- PostgreSQL donne l'exécution à tout le monde par défaut. On retire, puis on
@@ -391,11 +550,17 @@ begin
   execute 'revoke execute on function fn_pointer(uuid,boolean)  from public';
   execute 'revoke execute on function fn_commander_pour(text,text,jsonb,date) from public';
   execute 'revoke execute on function fn_annuler_pour(uuid)                   from public';
+  execute 'revoke execute on function fn_clients(text,text)                   from public';
+  execute 'revoke execute on function fn_client_maj(uuid,text,text)           from public';
+  execute 'revoke execute on function fn_fusionner(uuid,uuid)                 from public';
   if exists (select 1 from pg_roles where rolname = 'authenticated') then
     execute 'grant execute on function fn_tableau(date,text) to authenticated';
     execute 'grant execute on function fn_pointer(uuid,boolean) to authenticated';
     execute 'grant execute on function fn_commander_pour(text,text,jsonb,date) to authenticated';
     execute 'grant execute on function fn_annuler_pour(uuid)                   to authenticated';
+    execute 'grant execute on function fn_clients(text,text)                   to authenticated';
+    execute 'grant execute on function fn_client_maj(uuid,text,text)           to authenticated';
+    execute 'grant execute on function fn_fusionner(uuid,uuid)                 to authenticated';
   end if;
   if exists (select 1 from pg_roles where rolname = 'anon') then
     execute 'revoke all on compte from anon';

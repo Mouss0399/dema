@@ -70,8 +70,13 @@ h1{font-size:21px} h2{font-size:17px}
 .tab.on{color:var(--accent);border-bottom-color:var(--accent)}
 .tab b{display:block;font-size:17px;line-height:1.2}
 /* cuisine */
-.plat{display:flex;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
-.plat:last-child{border-bottom:0;padding-bottom:0}
+.platbloc{padding:12px 0;border-bottom:1px solid var(--line)}
+.platbloc:last-child{border-bottom:0;padding-bottom:0}
+.plat{display:flex;align-items:baseline;gap:12px}
+.qui{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 0 58px}
+.nomq{font-size:12px;background:var(--surface-2);border-radius:999px;padding:3px 9px;
+  color:var(--ink-2);white-space:nowrap}
+.nomq.paye{background:var(--good-soft);color:var(--good)}
 .qte{font-family:var(--display);font-weight:700;font-size:26px;line-height:1;color:var(--accent);
   min-width:46px;text-align:right;flex:none;font-variant-numeric:tabular-nums}
 .plat .nm{font-size:14.5px;overflow-wrap:break-word;min-width:0}
@@ -144,6 +149,17 @@ h1{font-size:21px} h2{font-size:17px}
   .plat2:disabled{opacity:.45;cursor:not-allowed}
   .rubt{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
     margin:14px 0 0;font-family:var(--display);font-weight:600}
+  .tab{font-size:12px}
+  .tab b{font-size:16px}
+  .cherche{width:100%;padding:11px;border:1.5px solid var(--line);border-radius:10px;
+    background:var(--surface);color:var(--ink);font:inherit;margin-top:10px}
+  .cherche:focus{outline:none;border-color:var(--accent)}
+  .dette{font-family:var(--display);font-weight:700;font-size:15px;flex:none;color:var(--accent);
+    font-variant-numeric:tabular-nums}
+  .dette.rien{color:var(--ink-3);font-weight:500;font-size:13px}
+  .pastille{display:inline-block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+    font-family:var(--display);font-weight:600;padding:2px 6px;border-radius:999px;
+    background:var(--warn-soft);color:var(--warn);margin-left:6px}
 </style>
 </head>
 <body>
@@ -179,12 +195,14 @@ h1{font-size:21px} h2{font-size:17px}
       <button class="tab on" data-v="cuisine">À préparer<b id="n-cuisine">—</b></button>
       <button class="tab" data-v="argent">Encaissé<b id="n-argent">—</b></button>
       <button class="tab" data-v="monde">Impayés<b id="n-monde">—</b></button>
+      <button class="tab" data-v="clients">Clients<b id="n-clients">—</b></button>
     </div>
 
     <button class="btn ghost sm" id="go-saisir">Ajouter une commande</button>
     <div class="card" id="v-cuisine"></div>
     <div id="v-argent" hidden></div>
     <div id="v-monde" hidden></div>
+    <div id="v-clients" hidden></div>
 
     <button class="btn ghost sm" id="go-out">Se déconnecter</button>
   </div>
@@ -344,7 +362,7 @@ var CONFIG = {
       var b = document.createElement("button");
       b.className = "chip" + (SITE === slug ? " on" : "");
       b.textContent = lib;
-      b.addEventListener("click", function(){ SITE = slug; charger(); });
+      b.addEventListener("click", function(){ SITE = slug; CLIENTS = null; charger(); });
       ch.appendChild(b);
     };
     SITE = d.filtre || null;
@@ -362,7 +380,11 @@ var CONFIG = {
     $("n-monde").textContent = (d.manquants||[]).length;
 
     cuisine(d); argent(d, tot); monde(d);
-    ["cuisine","argent","monde"].forEach(function(v){
+    // le compteur de l'onglet ne doit pas rester vide tant qu'on ne l'a pas
+    // ouvert : on charge la liste une fois, en arrière-plan
+    if(VUE === "clients" || CLIENTS) rendreClients();
+    else chargerClients();
+    ["cuisine","argent","monde","clients"].forEach(function(v){
       $("v-"+v).hidden = (v !== VUE);
       var t = document.querySelector('.tab[data-v="'+v+'"]');
       if(t) t.classList.toggle("on", v === VUE);
@@ -383,6 +405,7 @@ var CONFIG = {
         var t = document.createElement("p"); t.className = "rub"; t.textContent = r.nom;
         box.appendChild(t);
         (r.articles||[]).forEach(function(a){
+          var bloc = document.createElement("div"); bloc.className = "platbloc";
           var li = document.createElement("div"); li.className = "plat";
           var q = document.createElement("div"); q.className = "qte"; q.textContent = a.quantite;
           var n = document.createElement("div"); n.className = "nm"; n.textContent = a.nom;
@@ -393,7 +416,31 @@ var CONFIG = {
               : "limite " + a.limite + " · reste " + (a.limite - a.quantite);
             n.appendChild(l);
           }
-          li.appendChild(q); li.appendChild(n); box.appendChild(li);
+          li.appendChild(q); li.appendChild(n); bloc.appendChild(li);
+
+          // La feuille de distribution : à qui donner ce plat à midi. Le sondage
+          // WhatsApp affichait déjà les noms sous chaque option ; sans eux, elle
+          // a des quantités mais ne sait pas qui sert quoi.
+          if((a.qui || []).length){
+            // Deux « Moussa » sur le même plat ne se distinguent pas : on ajoute
+            // l'initiale du nom de famille, et seulement là où c'est nécessaire.
+            var compte = {};
+            a.qui.forEach(function(p2){
+              var f = pre(p2.nom); compte[f] = (compte[f] || 0) + 1;
+            });
+            var g = document.createElement("div"); g.className = "qui";
+            a.qui.forEach(function(p2){
+              var f = pre(p2.nom), reste = String(p2.nom).split(" ").slice(1).join(" ");
+              var lib = (compte[f] > 1 && reste) ? f + " " + reste.charAt(0).toUpperCase() + "." : f;
+              var sp = document.createElement("span");
+              sp.className = "nomq" + (p2.paye ? " paye" : "");
+              sp.textContent = lib + (p2.qte > 1 ? " ×" + p2.qte : "");
+              sp.title = p2.nom + (p2.paye ? " · réglé" : " · pas encore réglé");
+              g.appendChild(sp);
+            });
+            bloc.appendChild(g);
+          }
+          box.appendChild(bloc);
         });
       });
     });
@@ -605,6 +652,165 @@ var CONFIG = {
     }).catch(function(){
       bouton.textContent = "Capture"; toast("Capture introuvable");
     });
+  }
+
+  /* ---------- les clients ---------- */
+  var CLIENTS = null, RECHERCHE = "";
+  function chargerClients(){
+    return rpc("fn_clients", { p_site: SITE, p_q: RECHERCHE || null })
+      .then(function(d){ CLIENTS = d; rendreClients(); })
+      .catch(function(e){ toast(e.message); });
+  }
+
+  function rendreClients(){
+    var box = $("v-clients"); box.innerHTML = "";
+    if(!CLIENTS){
+      box.innerHTML = '<div class="card"><p class="vide">Chargement…</p></div>';
+      chargerClients(); return;
+    }
+    var gens = CLIENTS.clients || [];
+    $("n-clients").textContent = gens.length;
+
+    var c = document.createElement("div"); c.className = "card";
+    var e = document.createElement("p"); e.className = "eyebrow";
+    var doivent = gens.filter(function(x){ return x.du > 0; });
+    var total = doivent.reduce(function(s2,x){ return s2 + x.du; }, 0);
+    e.textContent = "Les gens (" + gens.length + ")";
+    c.appendChild(e);
+    var sb = document.createElement("p"); sb.className = "sub";
+    sb.textContent = doivent.length
+      ? doivent.length + (doivent.length > 1 ? " personnes doivent " : " personne doit ")
+        + fcfa(total) + " en tout, toutes dates confondues."
+      : "Personne ne doit rien. Tout est à jour.";
+    c.appendChild(sb);
+
+    var inp = document.createElement("input"); inp.className = "cherche"; inp.type = "search";
+    inp.placeholder = "Chercher un nom ou un numéro"; inp.value = RECHERCHE;
+    var tempo = null;
+    inp.addEventListener("input", function(){
+      RECHERCHE = inp.value;
+      clearTimeout(tempo);
+      tempo = setTimeout(function(){ chargerClients(); }, 300);
+    });
+    c.appendChild(inp);
+
+    if(!gens.length){
+      var v = document.createElement("p"); v.className = "vide";
+      v.textContent = RECHERCHE ? "Personne ne correspond." : "Personne encore inscrite.";
+      c.appendChild(v);
+    }
+
+    gens.forEach(function(x){
+      var r = document.createElement("div"); r.className = "row";
+      var w = document.createElement("div"); w.className = "who";
+      w.innerHTML = "<b></b><span></span>";
+      w.children[0].textContent = x.nom;
+      if(!x.inscrit){
+        var tg = document.createElement("span"); tg.className = "pastille";
+        tg.textContent = "pas inscrit"; w.children[0].appendChild(tg);
+      }
+      var det = [];
+      if((CLIENTS.clients||[]).length && SITE === null) det.push(x.site);
+      if(x.tel) det.push(x.tel);
+      det.push(x.repas + (x.repas > 1 ? " repas" : " repas") + " sur 30 j");
+      if(x.dernier) det.push("dernier " + new Date(x.dernier + "T12:00:00")
+        .toLocaleDateString("fr-FR", { day:"numeric", month:"short" }));
+      w.children[1].textContent = det.join(" · ");
+      var d = document.createElement("div");
+      d.className = "dette" + (x.du > 0 ? "" : " rien");
+      d.textContent = x.du > 0 ? fcfa(x.du) : "à jour";
+      r.appendChild(w); r.appendChild(d);
+
+      if(x.du > 0 && x.tel){
+        var num = String(x.tel).replace(/\D/g,"");
+        if(num.length === 9) num = "221" + num;
+        var lien = document.createElement("a"); lien.className = "act";
+        lien.href = "https://wa.me/" + num + "?text=" + encodeURIComponent(
+          "Bonjour " + pre(x.nom) + ", il reste " + fcfa(x.du) + " à régler sur tes repas.");
+        lien.target = "_blank"; lien.rel = "noopener"; lien.textContent = "Relancer";
+        r.appendChild(lien);
+      }
+      var mo = document.createElement("button"); mo.className = "act"; mo.textContent = "Fiche";
+      mo.addEventListener("click", function(){ ficheClient(x); });
+      r.appendChild(mo);
+      c.appendChild(r);
+    });
+    box.appendChild(c);
+
+    if((CLIENTS.doublons||[]).length){
+      var c2 = document.createElement("div"); c2.className = "card";
+      var e2 = document.createElement("p"); e2.className = "eyebrow";
+      e2.textContent = "Peut-être la même personne"; c2.appendChild(e2);
+      var s2 = document.createElement("p"); s2.className = "sub";
+      s2.textContent = "Deux fiches aux noms proches. Rien n'est réuni sans toi.";
+      c2.appendChild(s2);
+      CLIENTS.doublons.forEach(function(x){
+        var r = document.createElement("div"); r.className = "row";
+        var w = document.createElement("div"); w.className = "who";
+        w.innerHTML = "<b></b><span></span>";
+        w.children[0].textContent = x.a + "  /  " + x.b;
+        w.children[1].textContent = x.site;
+        var bt = document.createElement("button"); bt.className = "act";
+        bt.textContent = "Réunir";
+        bt.addEventListener("click", function(){ ficheFusion(x); });
+        r.appendChild(w); r.appendChild(bt); c2.appendChild(r);
+      });
+      box.appendChild(c2);
+    }
+  }
+
+  function ficheClient(x){
+    var f = document.createElement("div");
+    var h = document.createElement("h2"); h.textContent = "Corriger la fiche";
+    var sb = document.createElement("p"); sb.className = "sub";
+    sb.textContent = x.du > 0 ? "Doit " + fcfa(x.du) + " en tout." : "À jour.";
+    f.appendChild(h); f.appendChild(sb);
+    var l1 = document.createElement("label"); l1.className = "lab"; l1.textContent = "Nom";
+    var i1 = document.createElement("input"); i1.id = "cl-nom"; i1.value = x.nom;
+    l1.appendChild(i1); f.appendChild(l1);
+    var l2 = document.createElement("label"); l2.className = "lab"; l2.textContent = "Numéro";
+    var i2 = document.createElement("input"); i2.id = "cl-tel"; i2.type = "tel";
+    i2.value = x.tel || ""; i2.placeholder = "77 000 00 00";
+    l2.appendChild(i2); f.appendChild(l2);
+    var ok = document.createElement("button"); ok.className = "btn"; ok.textContent = "Enregistrer";
+    ok.addEventListener("click", function(){
+      ok.disabled = true; ok.textContent = "…";
+      rpc("fn_client_maj", { p_personne: x.id, p_nom: $("cl-nom").value, p_tel: $("cl-tel").value })
+        .then(function(){ fermerP(); toast("Fiche corrigée"); return chargerClients(); })
+        .catch(function(e){ toast(e.message); ok.disabled = false; ok.textContent = "Enregistrer"; });
+    });
+    f.appendChild(ok);
+    var an = document.createElement("button"); an.className = "btn ghost sm";
+    an.textContent = "Annuler"; an.addEventListener("click", fermerP);
+    f.appendChild(an);
+    ouvrirP(f);
+  }
+
+  function ficheFusion(x){
+    var f = document.createElement("div");
+    var h = document.createElement("h2"); h.textContent = "Réunir deux fiches";
+    var sb = document.createElement("p"); sb.className = "sub";
+    sb.textContent = "Les commandes et les paiements des deux iront sur celle que tu gardes. "
+                   + "C'est définitif.";
+    f.appendChild(h); f.appendChild(sb);
+    [[x.a_id, x.a, x.b_id], [x.b_id, x.b, x.a_id]].forEach(function(o){
+      var bt = document.createElement("button"); bt.className = "btn ghost sm";
+      bt.style.marginTop = "10px";
+      bt.textContent = "Garder « " + o[1] + " »";
+      bt.addEventListener("click", function(){
+        bt.disabled = true; bt.textContent = "…";
+        rpc("fn_fusionner", { p_garde: o[0], p_absorbe: o[2] })
+          .then(function(r){ fermerP(); toast("Réunies sous " + r.nom); return chargerClients(); })
+          .then(function(){ return charger(); })
+          .catch(function(e){ toast(e.message); bt.disabled = false;
+                              bt.textContent = "Garder « " + o[1] + " »"; });
+      });
+      f.appendChild(bt);
+    });
+    var an = document.createElement("button"); an.className = "btn ghost sm";
+    an.textContent = "Annuler"; an.addEventListener("click", fermerP);
+    f.appendChild(an);
+    ouvrirP(f);
   }
 
   /* ---------- saisir une commande pour quelqu'un ---------- */

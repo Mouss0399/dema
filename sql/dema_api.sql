@@ -13,6 +13,39 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
+-- Le numéro comme identité
+-- ---------------------------------------------------------------------
+-- Un nom ne se rapproche qu'approximativement : « Awa Ndiaye » et
+-- « Awa Ndiay » ne se rejoignent que par un calcul de similarité, qui rate
+-- des doublons et en invente. Un numéro, lui, se normalise exactement.
+-- Il devient donc la clé ; le nom reste l'étiquette, parce que c'est un nom
+-- qu'il faut lire pour distribuer les repas, pas un numéro.
+create or replace function fn_norm_tel(txt text) returns text
+language sql immutable as $$
+  select nullif(
+    regexp_replace(
+      regexp_replace(regexp_replace(coalesce(txt,''), '[^0-9]', '', 'g'),
+                     '^(00221|221)', ''),
+      '^0+', ''),
+    '');
+$$;
+
+-- Mise à niveau d'une base déjà en service. Sans effet si déjà fait.
+alter table personne add column if not exists tel_norm text
+  generated always as (fn_norm_tel(tel)) stored;
+
+do $$
+begin
+  create unique index if not exists uq_personne_tel on personne (site_id, tel_norm)
+    where tel_norm is not null and fusionnee_vers is null;
+exception when unique_violation then
+  raise exception 'Deux personnes partagent déjà un numéro sur un même site. '
+    'Corrige-les avant de rejouer : select site_id, tel_norm, count(*) '
+    'from personne where tel_norm is not null and fusionnee_vers is null '
+    'group by 1,2 having count(*) > 1;';
+end $$;
+
+-- ---------------------------------------------------------------------
 -- Verrouillage : rien n'est lisible ni écrivable en direct
 -- ---------------------------------------------------------------------
 do $$
@@ -242,35 +275,56 @@ end $$;
 create or replace function fn_inscrire(
   p_slug text, p_nom text, p_tel text, p_appareil text)
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
-declare v_site site; v_p personne;
+declare v_site site; v_p personne; v_tel text;
 begin
   v_site := fn_site(p_slug);
   if v_site.id is null then raise exception 'Site inconnu'; end if;
-  if length(trim(p_nom)) < 2 then raise exception 'Nom trop court'; end if;
+  if length(trim(coalesce(p_nom,''))) < 2 then raise exception 'Écris ton nom'; end if;
   if coalesce(p_appareil,'') = '' then raise exception 'Appareil manquant'; end if;
 
-  -- déjà connu sur cet appareil ?
+  v_tel := fn_norm_tel(p_tel);
+  if v_tel is null then
+    raise exception 'Ton numéro est nécessaire : c''est lui qui te retrouve si tu changes de navigateur.';
+  end if;
+  if length(v_tel) < 9 then
+    raise exception 'Ce numéro est trop court. Écris-le comme 77 123 45 67.';
+  end if;
+
+  -- 1. déjà connu sur cet appareil : rien à faire
   select * into v_p from personne
    where site_id = v_site.id and appareil = p_appareil and fusionnee_vers is null;
-  if found then return jsonb_build_object('id', v_p.id, 'nom', v_p.nom, 'nouveau', false); end if;
+  if found and fn_norm_tel(v_p.tel) = v_tel then
+    return jsonb_build_object('id', v_p.id, 'nom', v_p.nom, 'nouveau', false, 'repris', false);
+  end if;
 
-  -- nom déjà inscrit : on rattache l'appareil s'il est libre
+  -- 2. ce numéro est déjà inscrit : c'est la même personne sur un autre
+  --    navigateur. On rattache ce navigateur à sa fiche — c'est exactement le
+  --    cas « j'ai ouvert depuis WhatsApp hier et depuis Chrome aujourd'hui ».
+  select * into v_p from personne
+   where site_id = v_site.id and tel_norm = v_tel and fusionnee_vers is null;
+  if found then
+    update personne set appareil = p_appareil where id = v_p.id;
+    return jsonb_build_object('id', v_p.id, 'nom', v_p.nom, 'nouveau', false,
+                              'repris', v_p.appareil is distinct from p_appareil);
+  end if;
+
+  -- 3. ce nom existe sans numéro : fiche créée par un collègue qui a commandé
+  --    pour cette personne. Elle la récupère en s'inscrivant.
   select * into v_p from personne
    where site_id = v_site.id and nom_norm = fn_norm(p_nom) and fusionnee_vers is null;
   if found then
-    if v_p.appareil is not null and v_p.appareil <> p_appareil then
-      raise exception 'Ce nom est déjà enregistré sur un autre téléphone';
+    if v_p.tel_norm is not null then
+      raise exception 'Ce nom est déjà pris par quelqu''un d''autre sur ce site. Ajoute ton nom de famille.';
     end if;
-    update personne set appareil = p_appareil,
-           tel = coalesce(nullif(trim(p_tel),''), tel)
+    update personne set appareil = p_appareil, tel = trim(p_tel)
      where id = v_p.id returning * into v_p;
-    return jsonb_build_object('id', v_p.id, 'nom', v_p.nom, 'nouveau', false);
+    return jsonb_build_object('id', v_p.id, 'nom', v_p.nom, 'nouveau', false, 'repris', true);
   end if;
 
   insert into personne (site_id, nom, tel, appareil)
-  values (v_site.id, trim(p_nom), nullif(trim(p_tel),''), p_appareil)
+  values (v_site.id, trim(p_nom), trim(p_tel), p_appareil)
   returning * into v_p;
-  return jsonb_build_object('id', v_p.id, 'nom', v_p.nom, 'nouveau', true);
+  return jsonb_build_object('id', v_p.id, 'nom', v_p.nom, 'nouveau', true, 'repris', false);
 end $$;
 
 -- ---------------------------------------------------------------------
