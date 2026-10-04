@@ -1,0 +1,4 @@
+Karla, version variable (graisses 200 a 800), sous-ensemble latin.
+Source : https://github.com/googlefonts/karla via @fontsource-variable/karla 5.3.0
+Licence : SIL Open Font License 1.1 — voir KARLA-LICENCE.txt
+Un seul fichier, servi depuis ce depot : aucune connexion exterieure.

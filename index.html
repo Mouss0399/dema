@@ -4,8 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Commander son déjeuner</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Karla:wght@400;500;600;700&display=swap">
+<link rel="preload" href="polices/karla.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+/* Karla, version variable : un seul fichier de 31 Ko pour toutes les graisses
+   de 200 a 800, servi depuis ce depot. Remplace les sept fichiers et les deux
+   connexions vers Google : la page s'affiche sans dependre d'un tiers, et sans
+   rien a laisser passer pour le reseau d'une entreprise.
+   Licence SIL OFL 1.1 — voir polices/KARLA-LICENCE.txt */
+@font-face{
+  font-family:"Karla";
+  src:url("polices/karla.woff2") format("woff2-variations"),
+      url("polices/karla.woff2") format("woff2");
+  font-weight:200 800;
+  font-style:normal;
+  font-display:swap;
+}
 :root{
   --paper:#FAF7F2; --surface:#FFFFFF; --surface-2:#F2EDE5; --surface-3:#E9E2D7;
   --line:#E3DACE; --line-strong:#C9BCA9;
@@ -13,7 +26,7 @@
   --accent:#A3123C; --accent-soft:#F7E3E9; --on-accent:#FFFFFF;
   --good:#1F6B4A; --good-soft:#E2F0E9;
   --warn:#9A5B06; --warn-soft:#FBEBD5;
-  --display:"Archivo",ui-sans-serif,system-ui,sans-serif;
+  --display:"Karla",ui-sans-serif,system-ui,sans-serif;
   --body:"Karla",ui-sans-serif,system-ui,sans-serif;
   color-scheme:light;
 }
@@ -28,31 +41,32 @@
 }}
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
   -webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px);
   padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+
 .wrap{max-width:430px;margin:0 auto;padding-inline:16px}
 .top{border-bottom:1px solid var(--line);padding-block:14px 12px;margin-bottom:4px}
-.brand{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.01em}
+.brand{font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:-.01em}
 .brand span{color:var(--accent)}
 .when{font-size:12px;color:var(--ink-3);margin-top:2px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:14px}
-.eyebrow{font-family:var(--display);font-size:10.5px;font-weight:600;letter-spacing:.1em;
+.eyebrow{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.1em;
   text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
-h1,h2{font-family:var(--display);font-weight:700;letter-spacing:-.015em;margin:0 0 4px;text-wrap:balance}
-h1{font-size:21px} h2{font-size:18px}
-.sub{font-size:13px;color:var(--ink-2);margin:0}
+h1,h2{font-family:var(--display);font-weight:800;letter-spacing:-.015em;margin:0 0 4px;text-wrap:balance}
+h1{font-size:22px} h2{font-size:18px}
+.sub{font-size:14px;color:var(--ink-2);margin:0}
 .social{display:flex;align-items:center;gap:10px;margin-top:14px;padding:11px 13px;
   background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px}
-.social b{font-family:var(--display);font-size:20px;color:var(--accent);line-height:1}
-.social span{font-size:12.5px;color:var(--ink-2)}
+.social b{font-family:var(--display);font-size:22px;color:var(--accent);line-height:1}
+.social span{font-size:14px;color:var(--ink-2)}
 .opts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .opt{display:flex;align-items:center;gap:11px;flex-wrap:wrap;background:var(--surface);
   border:1.5px solid var(--line);border-radius:10px;padding:11px 12px}
 .opt.on{border-color:var(--accent);background:var(--accent-soft)}
 .opt.epuise{opacity:.55}
 .hit{display:flex;align-items:center;gap:11px;flex:1;min-width:0;cursor:pointer;background:none;
-  border:0;padding:4px 0;font-family:var(--body);font-size:15px;color:inherit;text-align:left}
+  border:0;padding:4px 0;font-family:var(--body);font-size:16px;color:inherit;text-align:left}
 .hit:disabled{cursor:not-allowed}
 .hit:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 .box{width:19px;height:19px;border-radius:6px;border:1.5px solid var(--line-strong);flex:none;position:relative}
@@ -64,12 +78,12 @@ h1{font-size:21px} h2{font-size:18px}
   border:0;border-radius:50%;background:var(--on-accent);transform:none}
 .nmwrap{flex:1;min-width:0}
 .nm{font-weight:500;overflow-wrap:anywhere}
-.who2{font-size:11.5px;color:var(--ink-3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who2{font-size:12px;color:var(--ink-3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cnt{flex:none;font-family:var(--display);font-size:12px;font-weight:700;color:var(--accent);
   background:var(--accent-soft);border-radius:20px;padding:3px 9px;font-variant-numeric:tabular-nums}
 .opt.on .cnt{background:var(--surface)}
-.pr{flex:none;font-variant-numeric:tabular-nums;font-weight:600;font-size:13.5px;color:var(--ink-2)}
-.tag{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+.pr{flex:none;font-variant-numeric:tabular-nums;font-weight:600;font-size:14px;color:var(--ink-2)}
+.tag{flex:none;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
   padding:3px 7px;border-radius:5px}
 .tag.free{color:var(--good);background:var(--good-soft)}
 .tag.reste{color:var(--warn);background:var(--warn-soft)}
@@ -84,14 +98,14 @@ h1{font-size:21px} h2{font-size:18px}
   border:0;margin-top:2px} .opt .step button{border:1.5px solid var(--line)}
   .opt .step .q{padding:0 4px} }
 .step button{appearance:none;background:var(--surface);border:0;color:var(--ink);width:34px;height:32px;
-  font-size:17px;line-height:1;cursor:pointer;font-family:var(--body)}
+  font-size:18px;line-height:1;cursor:pointer;font-family:var(--body)}
 .step button:disabled{opacity:.35;cursor:not-allowed}
 .step .q{min-width:28px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;font-size:14px}
 .phead{display:flex;align-items:center;gap:10px}
 .ptog{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;
   cursor:pointer;font-family:var(--body);color:inherit;text-align:left}
 .ptxt{flex:1;min-width:0}
-.pname{display:block;font-family:var(--display);font-size:17px;font-weight:700;
+.pname{display:block;font-family:var(--display);font-size:18px;font-weight:700;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .psum{display:block;font-size:12px;color:var(--ink-3);margin-top:1px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -99,26 +113,30 @@ h1{font-size:21px} h2{font-size:18px}
 .caret{flex:none;width:9px;height:9px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);
   transform:rotate(45deg);margin-top:-4px}
 .caret.up{transform:rotate(-135deg);margin-top:3px}
-.ptot{flex:none;font-family:var(--display);font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.ptot{flex:none;font-family:var(--display);font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
 .rubblk{margin-top:15px;padding-top:13px;border-top:1px solid var(--line)}
 .rubhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.chip{appearance:none;font-family:var(--body);font-size:12.5px;cursor:pointer;border:1.5px solid var(--line);
+.chip{appearance:none;font-family:var(--body);font-size:14px;cursor:pointer;border:1.5px solid var(--line);
   background:var(--surface);color:var(--ink-2);border-radius:20px;padding:6px 11px}
 .chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .total{display:flex;align-items:baseline;justify-content:space-between;margin-top:16px;
   padding-top:14px;border-top:1px solid var(--line)}
-.total .t1{font-size:13px;color:var(--ink-2)}
-.total .t2{font-family:var(--display);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.total .t1{font-size:14px;color:var(--ink-2)}
+.total .t2{font-family:var(--display);font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
 .btn{display:block;width:100%;margin-top:12px;appearance:none;border:0;border-radius:10px;
   background:var(--accent);color:var(--on-accent);font-family:var(--display);font-weight:600;
-  font-size:15px;padding:14px;cursor:pointer}
-.btn:disabled{opacity:.4;cursor:default}
+  font-size:16px;padding:14px;cursor:pointer}
+/* Un bouton desactive en bordeaux a 40 % d'opacite ressemble a un bouton
+   rose valide. On le sort entierement de la couleur d'accent : il doit se
+   lire « tu n'as rien choisi », pas « clique ici ». */
+.btn:disabled{background:var(--surface-2);color:var(--ink-3);
+  box-shadow:inset 0 0 0 1.5px var(--line);opacity:1;cursor:default}
 .btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .btn.ghost{background:none;color:var(--ink-2);border:1.5px solid var(--line);font-weight:500}
-.btn.sm{font-size:13.5px;padding:10px;margin-top:9px}
-.lab{display:block;margin-top:12px;font-size:13px;color:var(--ink-2)}
-.lab input{display:block;width:100%;margin-top:6px;padding:11px 12px;font-size:15px;color:var(--ink);
+.btn.sm{font-size:14px;padding:10px;margin-top:9px}
+.lab{display:block;margin-top:12px;font-size:14px;color:var(--ink-2)}
+.lab input{display:block;width:100%;margin-top:6px;padding:11px 12px;font-size:16px;color:var(--ink);
   border:1.5px solid var(--line);border-radius:9px;background:var(--surface);font-family:var(--body)}
 .lab input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .sugg{display:flex;flex-direction:column;gap:6px;margin-top:8px}
@@ -126,27 +144,27 @@ h1{font-size:21px} h2{font-size:18px}
   border:1.5px solid var(--line);background:var(--surface-2);border-radius:9px;padding:10px 12px;
   font-family:var(--body);font-size:14px;color:var(--ink)}
 .sgi .sgn{flex:1;min-width:0;font-weight:600}
-.sgi .sgt{flex:none;font-size:11px;color:var(--ink-3)}
+.sgi .sgt{flex:none;font-size:12px;color:var(--ink-3)}
 .pay{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:12px}
-.pay .cap{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
-.pay .num{font-family:var(--display);font-weight:600;font-size:17px;font-variant-numeric:tabular-nums}
+.pay .cap{font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.pay .num{font-family:var(--display);font-weight:600;font-size:18px;font-variant-numeric:tabular-nums}
 .copy{appearance:none;border:1.5px solid var(--line-strong);background:var(--surface);color:var(--ink);
-  border-radius:8px;padding:8px 11px;font-family:var(--body);font-size:12.5px;cursor:pointer;flex:none}
+  border-radius:8px;padding:8px 11px;font-family:var(--body);font-size:14px;cursor:pointer;flex:none}
 .done{text-align:center;padding:8px 0 2px}
 .tick{width:50px;height:50px;margin:0 auto 12px;border-radius:50%;background:var(--good-soft);display:grid;place-items:center}
 .tick svg{width:25px;height:25px;stroke:var(--good);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .tick.wait{background:var(--warn-soft)} .tick.wait svg{stroke:var(--warn)}
 .recap{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:7px;text-align:left}
-.recap div{display:flex;justify-content:space-between;gap:12px;font-size:13.5px}
+.recap div{display:flex;justify-content:space-between;gap:12px;font-size:14px}
 .recap span:first-child{color:var(--ink-2)}
 .recap span:last-child{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
 .err{margin-top:12px;padding:11px 13px;border-radius:9px;background:var(--accent-soft);
-  border:1px solid var(--accent);color:var(--accent);font-size:13px}
-.note{font-size:11.5px;color:var(--ink-3);line-height:1.55;margin-top:14px;
+  border:1px solid var(--accent);color:var(--accent);font-size:14px}
+.note{font-size:12px;color:var(--ink-3);line-height:1.55;margin-top:14px;
   border-top:1px solid var(--line);padding-top:12px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));
-  background:var(--ink);color:var(--paper);font-size:13px;padding:10px 16px;border-radius:24px;z-index:50;
+  background:var(--ink);color:var(--paper);font-size:14px;padding:10px 16px;border-radius:24px;z-index:50;
   opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
 .toast.on{opacity:1}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -158,10 +176,10 @@ h1{font-size:21px} h2{font-size:18px}
   #apercu[hidden]{display:none}
   .sub.verrou{color:var(--good);font-weight:600}
   .annul{display:block;margin-top:6px;border:1.5px solid var(--line);border-radius:8px;
-    background:none;color:var(--ink-3);font-size:11.5px;padding:4px 9px;cursor:pointer;
+    background:none;color:var(--ink-3);font-size:12px;padding:4px 9px;cursor:pointer;
     font-family:var(--body)}
   .annul:disabled{opacity:.5}
-  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;
     background:var(--surface-2);padding:2px 6px;border-radius:5px}
   #acc-contact{text-decoration:none;text-align:center}
   /* `hidden` doit l'emporter : une règle de classe qui pose display (flex, block)
@@ -170,7 +188,7 @@ h1{font-size:21px} h2{font-size:18px}
      et le bouton « Changer ma commande » sur une commande déjà réglée. */
   [hidden]{display:none !important}
   /* en-tête allégé */
-  .salut{font-size:13.5px;color:var(--ink-2);margin:12px 0 0}
+  .salut{font-size:14px;color:var(--ink-2);margin:12px 0 0}
   .salut b{color:var(--ink);font-weight:600}
   #s-order .social{margin-top:10px}
 
@@ -186,6 +204,18 @@ h1{font-size:21px} h2{font-size:18px}
      sinon elle s'affiche par-dessus le bouton « Valider ». */
   body.commande .toast{bottom:calc(var(--pied, 100px) + 14px)}
   body.commande{padding-bottom:calc(var(--pied, 100px) + 20px)}
+
+/* ------------------------------------------------------------------
+   Garde-fou iOS — doit rester le DERNIER bloc de cette feuille.
+   Safari iOS zoome la page des qu'on touche un champ dont la police
+   calculee est sous 16 px. Les champs heritent de .lab, qui est a
+   14 px : un selecteur « input » nu perd la bataille de specificite.
+   D'ou les deux selecteurs, et la position en fin de feuille.
+   Verifie en mesurant getComputedStyle(champ).fontSize, jamais la
+   declaration : c'est le rendu qui zoome, pas le code.
+   ------------------------------------------------------------------ */
+input,select,textarea{font-size:16px}
+.lab input,.lab select,.lab textarea{font-size:16px}
 </style>
 </head>
 <body>
