@@ -229,8 +229,36 @@ begin
     raise exception 'L''heure de clôture doit s''écrire comme 10:30.';
   end;
 
+  -- L'adresse est unique dans toute la base, parce qu'elle seule figure dans
+  -- le lien : …/?s=yas doit désigner une entreprise et une seule. Mais deux
+  -- traiteurs peuvent servir le même client — deux immeubles d'Orange, deux
+  -- étages de Sonatel. Refuser serait absurde : le traiteur ne peut pas
+  -- renommer son client. On complète donc l'adresse avec son propre nom,
+  -- puis avec un chiffre si besoin. Le premier arrivé garde l'adresse courte.
   if exists (select 1 from site where slug = v_slug and (p_id is null or id <> p_id)) then
-    raise exception 'L''adresse « % » est déjà prise. Change le nom.', v_slug;
+    declare
+      v_base text := v_slug;
+      v_moi  text;
+      v_n    int := 2;
+    begin
+      select lower(regexp_replace(
+               translate(nom, 'àâäéèêëîïôöùûüç', 'aaaeeeeiioouuuc'),
+               '[^a-zA-Z0-9]+', '-', 'g')) into v_moi
+        from traiteur where id = v_t;
+      v_moi := trim(both '-' from v_moi);
+      -- « Chez Khady » donnerait « chez », qui ne distingue rien : on écarte
+      -- les mots de liaison avant de prendre le premier mot qui reste.
+      v_moi := regexp_replace(v_moi, '^(chez|la|le|les|au|aux|resto|restaurant|traiteur)-', '');
+      v_moi := split_part(trim(both '-' from v_moi), '-', 1);
+      if length(v_moi) < 2 then v_moi := 'bis'; end if;
+      v_slug := v_base || '-' || v_moi;
+
+      while exists (select 1 from site where slug = v_slug and (p_id is null or id <> p_id)) loop
+        v_slug := v_base || '-' || v_moi || '-' || v_n;
+        v_n := v_n + 1;
+        if v_n > 50 then raise exception 'Impossible de fabriquer une adresse pour « % ».', p_nom; end if;
+      end loop;
+    end;
   end if;
 
   if p_id is null then

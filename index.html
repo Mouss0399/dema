@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Dema Traiteur — commander</title>
+<title>Commander son déjeuner</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Karla:wght@400;500;600;700&display=swap">
 <style>
 :root{
@@ -47,7 +47,7 @@ h1{font-size:21px} h2{font-size:18px}
 .social b{font-family:var(--display);font-size:20px;color:var(--accent);line-height:1}
 .social span{font-size:12.5px;color:var(--ink-2)}
 .opts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-.opt{display:flex;align-items:center;gap:11px;background:var(--surface);
+.opt{display:flex;align-items:center;gap:11px;flex-wrap:wrap;background:var(--surface);
   border:1.5px solid var(--line);border-radius:10px;padding:11px 12px}
 .opt.on{border-color:var(--accent);background:var(--accent-soft)}
 .opt.epuise{opacity:.55}
@@ -74,7 +74,15 @@ h1{font-size:21px} h2{font-size:18px}
 .tag.free{color:var(--good);background:var(--good-soft)}
 .tag.reste{color:var(--warn);background:var(--warn-soft)}
 .tag.out{color:var(--ink-3);background:var(--surface-3)}
-.step{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:9px;overflow:hidden;flex:none}
+/* Le compteur de portions prenait 140 px sur un écran de 390 : le nom du plat
+   se brisait en trois lignes, parfois au milieu d'un mot. Il passe sur sa
+   propre ligne, et « Brochette de lottes, riz blanc et haricots sautés » tient. */
+.step{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:9px;
+  overflow:hidden;flex:none;margin-left:auto}
+.opt .step{width:auto}
+@media (max-width:420px){ .opt .step{flex-basis:100%;justify-content:flex-end;
+  border:0;margin-top:2px} .opt .step button{border:1.5px solid var(--line)}
+  .opt .step .q{padding:0 4px} }
 .step button{appearance:none;background:var(--surface);border:0;color:var(--ink);width:34px;height:32px;
   font-size:17px;line-height:1;cursor:pointer;font-family:var(--body)}
 .step button:disabled{opacity:.35;cursor:not-allowed}
@@ -153,13 +161,38 @@ h1{font-size:21px} h2{font-size:18px}
     background:none;color:var(--ink-3);font-size:11.5px;padding:4px 9px;cursor:pointer;
     font-family:var(--body)}
   .annul:disabled{opacity:.5}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+    background:var(--surface-2);padding:2px 6px;border-radius:5px}
+  #acc-contact{text-decoration:none;text-align:center}
+  /* `hidden` doit l'emporter : une règle de classe qui pose display (flex, block)
+     bat l'attribut, et l'élément reste affiché alors qu'on le croit caché.
+     C'est ce qui laissait un bandeau rose vide en haut du menu chaque matin,
+     et le bouton « Changer ma commande » sur une commande déjà réglée. */
+  [hidden]{display:none !important}
+  /* en-tête allégé */
+  .salut{font-size:13.5px;color:var(--ink-2);margin:12px 0 0}
+  .salut b{color:var(--ink);font-weight:600}
+  #s-order .social{margin-top:10px}
+
+  /* pied fixe : le total et le bouton toujours sous le pouce */
+  .pied{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--paper);
+    border-top:1px solid var(--line);
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+  .pied-in{max-width:430px;margin:0 auto}
+  .pied .total{margin:0 0 8px}
+  .pied .btn{margin-top:0}
+  /* la place que le pied occupe, pour que rien ne reste dessous.
+     La bulle de message vit hors du conteneur : on la remonte via le corps,
+     sinon elle s'affiche par-dessus le bouton « Valider ». */
+  body.commande .toast{bottom:calc(var(--pied, 100px) + 14px)}
+  body.commande{padding-bottom:calc(var(--pied, 100px) + 20px)}
 </style>
 </head>
 <body>
 
 <div class="wrap">
   <div class="top">
-    <div class="brand">Dema <span>Traiteur</span></div>
+    <div class="brand" id="brand">Commander</div>
     <div class="when" id="when">Chargement…</div>
   </div>
 
@@ -181,21 +214,32 @@ h1{font-size:21px} h2{font-size:18px}
 
   <!-- commande -->
   <div id="s-order" hidden>
-    <div class="card">
-      <p class="eyebrow" id="menuday">Menu du jour</p>
-      <h1>Bonjour <span id="hello"></span></h1>
-      <p class="sub" id="cloture"></p>
-      <div class="social" id="social" hidden><b></b><span></span></div>
-    </div>
+    <!-- Le bonjour et l'heure de clôture tenaient une carte entière pour trois
+         lignes : remontés ici, le menu commence presque en haut de l'écran. -->
+    <p class="salut">Bonjour <b id="hello"></b> · <span id="cloture"></span></p>
+    <div class="social" id="social" hidden><b></b><span></span></div>
+
     <div id="paniers"></div>
-    <div class="card">
-      <p class="eyebrow">Commander pour quelqu'un d'autre</p>
+
+    <!-- Replié : la plupart ne commandent que pour eux. Une ligne au lieu
+         d'une carte, ouverte seulement par ceux qui en ont besoin. -->
+    <button class="btn ghost sm" id="go-autre">Commander aussi pour quelqu'un d'autre</button>
+    <div class="card" id="bloc-autre" hidden>
+      <p class="eyebrow">Pour quelqu'un d'autre</p>
       <p class="sub">Chacun choisit son propre plat. Tu régleras le tout ensemble.</p>
       <label class="lab" for="invite">Prénom et nom<input type="text" id="invite" placeholder="Un collègue, un invité"></label>
       <button class="btn ghost sm" id="go-invite">Ajouter sa commande</button>
-      <div class="total"><div class="t1" id="tl">—</div><div class="t2" id="tv">0 F</div></div>
-      <button class="btn" id="go-commander">Valider ma commande</button>
-      <button class="btn ghost sm" id="go-payer">J'ai déjà commandé · je veux régler</button>
+    </div>
+
+    <button class="btn ghost sm" id="go-payer">J'ai déjà commandé · je veux régler</button>
+
+    <!-- Avec deux plats, deux jus et un dessert, il fallait descendre jusqu'en
+         bas pour voir ce qu'on doit et valider. Le pied reste sous le pouce. -->
+    <div class="pied">
+      <div class="pied-in">
+        <div class="total"><div class="t1" id="tl">—</div><div class="t2" id="tv">0 F</div></div>
+        <button class="btn" id="go-commander">Valider ma commande</button>
+      </div>
     </div>
   </div>
 
@@ -222,6 +266,34 @@ h1{font-size:21px} h2{font-size:18px}
     <button class="btn ghost sm" id="go-modifier" hidden>Changer ma commande</button>
   </div>
 
+  <!-- adresse nue : ni erreur ni cul-de-sac -->
+  <div id="s-accueil" hidden>
+    <div class="card">
+      <p class="eyebrow">Le déjeuner au bureau</p>
+      <h1 id="acc-titre">Commander son déjeuner</h1>
+      <p class="sub">Ton traiteur garde son menu et ses habitudes. Toi, tu cliques —
+        pas d'application à installer, pas de compte à créer.</p>
+    </div>
+
+    <div class="card">
+      <p class="eyebrow">Tu travailles dans une entreprise servie ?</p>
+      <p class="sub">Il te faut le lien de <b>ton</b> entreprise : c'est lui qui dit au
+        traiteur d'où vient ta commande. Cherche-le dans le groupe WhatsApp où passe
+        le menu, ou demande-le à ton traiteur.</p>
+      <p class="note">Il ressemble à <code>…/?s=yas</code> — le nom de ton entreprise à la fin.</p>
+    </div>
+
+    <div class="card" id="acc-traiteur" hidden>
+      <p class="eyebrow">Tu es traiteur ?</p>
+      <p class="sub">Tu écris ton menu une fois pour la semaine. Chaque matin, tes clients
+        commandent depuis leur groupe. À midi tu vois qui a pris quoi, qui a payé, et ce
+        qui manque — par entreprise.</p>
+      <a class="btn" id="acc-contact" href="#">En parler sur WhatsApp</a>
+    </div>
+
+    <button class="btn ghost sm" id="acc-suivi">J'ai un compte traiteur</button>
+  </div>
+
   <!-- règlement -->
   <div id="s-pay" hidden>
     <div class="card">
@@ -238,7 +310,7 @@ h1{font-size:21px} h2{font-size:18px}
     </div>
     <div class="card">
       <p class="eyebrow">Capture du paiement <span class="opt-tag">facultatif</span></p>
-      <p class="sub">Utile en cas de doute. Dema la voit à côté de ta ligne.</p>
+      <p class="sub">Utile en cas de doute. Le traiteur la voit à côté de ta ligne.</p>
       <div class="drop" id="drop">
         <input type="file" id="fichier" accept="image/*" hidden>
         <button class="btn ghost sm" type="button" id="go-fichier">Choisir une image</button>
@@ -279,7 +351,12 @@ h1{font-size:21px} h2{font-size:18px}
 var CONFIG = {
   url:  "https://fiqrfrcsgxqvqjgvzasr.supabase.co",  // Project URL
   cle:  "sb_publishable_yAowOWU05DlJ_xQXU0vQ0A_bk6O23ht",  // clé publique
-  site: ""                                           // laissé vide : il vient de l'adresse
+  site: "",                                          // laissé vide : il vient de l'adresse
+
+  // Ce que voit quelqu'un qui tape l'adresse nue, sans lien d'entreprise.
+  marque:  "Lekk bi",            // le nom du service — remplace par le tien
+  contact: ""                    // ton numéro WhatsApp, ex. "221771234567".
+                                 // Laissé vide, le bouton « je suis traiteur » n'apparaît pas.
 };
 
 // L'entreprise vient du lien : …/?s=yas, …/?s=orange. Un seul déploiement sert
@@ -356,8 +433,33 @@ var CONFIG = {
     });
   }
 
+  function accueil(){
+    $("when").textContent = "";
+    $("brand").textContent = CONFIG.marque || "Commander";
+    $("acc-titre").textContent = CONFIG.marque || "Commander son déjeuner";
+    document.title = (CONFIG.marque || "Commander") + " — le déjeuner au bureau";
+    var num = String(CONFIG.contact || "").replace(/\D/g,"");
+    if(num){
+      $("acc-traiteur").hidden = false;
+      $("acc-contact").href = "https://wa.me/" + num + "?text="
+        + encodeURIComponent("Bonjour, je suis traiteur et je voudrais en savoir plus.");
+    }
+    $("acc-suivi").addEventListener("click", function(){ location.href = "suivi.html"; });
+    ecran("accueil");
+  }
+
   function ecran(n){
-    ["who","order","ok","deja","pay","fin","ferme"].forEach(function(k){ $("s-"+k).hidden = (k !== n); });
+    ["accueil","who","order","ok","deja","pay","fin","ferme"].forEach(function(k){ $("s-"+k).hidden = (k !== n); });
+    // le pied fixe recouvre le bas de la page : on réserve la place, et
+    // seulement sur l'écran qui le porte
+    document.body.classList.toggle("commande", n === "order");
+    // la hauteur réelle du pied : le bouton et le total peuvent passer à deux
+    // lignes selon le libellé. Mesurer vaut mieux que deviner.
+    if(n === "order") setTimeout(function(){
+      var p = document.querySelector(".pied");
+      if(p) document.documentElement.style.setProperty("--pied",
+              Math.round(p.getBoundingClientRect().height) + "px");
+    }, 0);
     window.scrollTo(0,0);
   }
 
@@ -367,20 +469,23 @@ var CONFIG = {
   function demarrer(){
     erreur(null);
     forcerMenu = false;
-    if(!CONFIG.site){
-      $("when").textContent = "—";
-      erreur("Ce lien est incomplet. Demande à ton entreprise le lien exact "
-           + "du traiteur — il finit par « ?s= » suivi du nom de l'entreprise.");
-      return;
-    }
+    // Pas d'entreprise dans l'adresse : quelqu'un a tapé le domaine nu. Ce n'est
+    // pas une erreur de sa part — c'est un visiteur. On lui explique au lieu de
+    // lui opposer un message d'échec.
+    if(!CONFIG.site){ accueil(); return; }
     $("when").textContent = "Chargement…";
     // on rend la promesse : après une annulation, la suite doit attendre le
     // menu rafraîchi, sinon elle redessine avec l'ancien
     return rpc("fn_menu", { p_slug: CONFIG.site, p_appareil: APPAREIL }).then(function(m){
       MENU = m;
+      // le nom du traiteur habille la page : un deuxième traiteur n'a rien à
+      // faire éditer dans le HTML, il lui suffit d'exister en base
+      if(m.traiteur){
+        $("brand").textContent = m.traiteur;
+        document.title = m.traiteur + " — commander";
+      }
       $("when").textContent = m.site + " · " + new Date(m.jour + "T12:00:00")
         .toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" });
-      $("menuday").textContent = "Menu du jour";
       $("cloture").textContent = "Commandes jusqu'à " + m.cloture + ".";
       if(m.commandes_du_jour > 0){
         $("social").hidden = false;
@@ -413,6 +518,10 @@ var CONFIG = {
       if(!MON_NOM){ ecran("who"); return; }
       $("hello").textContent = pre(MON_NOM);
       if(!paniers.length) paniers = [{ pour:null, choix:{}, ouvert:true }];
+      // si une commande pour autrui est déjà ouverte, le bloc reste déplié
+      var autrui = paniers.some(function(p){ return !!p.pour; });
+      $("bloc-autre").hidden = !autrui;
+      $("go-autre").hidden = autrui;
       rendrePaniers(); rendreTotal();
       // Déjà commandé aujourd'hui ? On le lui rappelle au lieu de le laisser
       // composer une seconde commande, que le serveur refuserait.
@@ -741,11 +850,20 @@ var CONFIG = {
       + (pleins.length > 1 ? " · " + pleins.length + " personnes" : "");
     $("tv").textContent = fcfa(t);
     $("go-commander").disabled = !tous;
+    var pd = document.querySelector(".pied");
+    if(pd) document.documentElement.style.setProperty("--pied",
+             Math.round(pd.getBoundingClientRect().height) + "px");
     $("go-commander").textContent = pleins.length > 1
       ? "Valider les " + pleins.length + " commandes"
       : (dejaSaCommande(pleins[0] || paniers[0] || {}) ? "Ajouter à ma commande"
                                                       : "Valider ma commande");
   }
+
+  $("go-autre").addEventListener("click", function(){
+    $("bloc-autre").hidden = false;
+    this.hidden = true;
+    $("invite").focus();
+  });
 
   $("go-invite").addEventListener("click", function(){
     var v = $("invite").value.replace(/\s+/g," ").trim();
@@ -978,7 +1096,8 @@ var CONFIG = {
           var d = document.createElement("div"); d.innerHTML = "<span></span><span></span>";
           d.children[0].textContent = x[0]; d.children[1].textContent = x[1]; r.appendChild(d);
         });
-        $("fin-sub").textContent = "Dema le retrouvera dans son total " + nomMoyen + " du jour.";
+        $("fin-sub").textContent = (MENU.traiteur || "Le traiteur")
+          + " le retrouvera dans son total " + nomMoyen + " du jour.";
         aRegler = []; PREUVE = null;
         $("apercu").hidden = true; $("fichier").value = "";
         $("preuve-etat").textContent = "Tu peux aussi faire un appui long puis « Coller » ici.";

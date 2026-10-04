@@ -153,6 +153,9 @@ begin
 
   select jsonb_build_object(
     'site',    v_site.nom,
+    -- le nom du traiteur vient du serveur : la page sert ainsi n'importe
+    -- lequel sans qu'on touche au HTML
+    'traiteur', (select nom from traiteur where id = v_site.traiteur_id),
     'jour',    v_jour,
     'cloture', to_char(v_site.cloture,'HH24:MI'),
     'ouvert',  (now() at time zone 'Africa/Dakar')::time < v_site.cloture,

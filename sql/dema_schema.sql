@@ -33,6 +33,19 @@ create extension if not exists pg_trgm;    -- similarité des noms
 -- ---------------------------------------------------------------------
 -- 0. Normalisation des noms — la même idée que le moteur de EDU360
 -- ---------------------------------------------------------------------
+-- Normalisation d'un numéro sénégalais : on ne garde que les chiffres, on
+-- retire l'indicatif 221 et les zéros de tête. Déterministe, contrairement au
+-- rapprochement de noms — c'est tout l'intérêt de s'en servir comme clé.
+create or replace function fn_norm_tel(txt text) returns text
+language sql immutable as $$
+  select nullif(
+    regexp_replace(
+      regexp_replace(regexp_replace(coalesce(txt,''), '[^0-9]', '', 'g'),
+                     '^(00221|221)', ''),
+      '^0+', ''),
+    '');
+$$;
+
 create or replace function fn_norm(txt text)
 returns text language sql immutable strict parallel safe as $$
   select trim(regexp_replace(
@@ -126,6 +139,10 @@ create table personne (
   nom             text not null,
   nom_norm        text not null generated always as (fn_norm(nom)) stored,
   tel             text,
+  -- Le numéro est la vraie clé d'une personne : il se normalise exactement,
+  -- là où un nom ne se rapproche qu'approximativement. « 77 123 45 67 »,
+  -- « 771234567 » et « +221771234567 » donnent la même chose.
+  tel_norm        text generated always as (fn_norm_tel(tel)) stored,
   appareil        text,                            -- clé stockée sur le téléphone
   fusionnee_vers  uuid references personne(id),    -- doublon résorbé
   cree_le         timestamptz not null default now()
@@ -135,6 +152,9 @@ create table personne (
 create unique index uq_personne_nom on personne (site_id, nom_norm)
   where fusionnee_vers is null;
 create index idx_personne_trgm on personne using gin (nom_norm gin_trgm_ops);
+-- un numéro ne désigne qu'une personne par site
+create unique index uq_personne_tel on personne (site_id, tel_norm)
+  where tel_norm is not null and fusionnee_vers is null;
 create unique index uq_personne_appareil on personne (site_id, appareil)
   where appareil is not null and fusionnee_vers is null;
 
