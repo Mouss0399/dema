@@ -33,19 +33,49 @@ echo "  — nom : $DEPOT   — public   — sans README"
 echo
 git push -u origin main
 
+DOMAINE=""
+[ -f CNAME ] && DOMAINE="$(head -1 CNAME | tr -d '\r\n')"
+MINUS="$(echo "$COMPTE" | tr 'A-Z' 'a-z')"
+if [ -n "$DOMAINE" ]; then BASE="https://$DOMAINE"; else BASE="https://$MINUS.github.io/$DEPOT"; fi
+
 cat <<FIN
 
-C'est envoyé.
+C'est envoye.
 
+FIN
+
+if [ -n "$DOMAINE" ]; then
+cat <<FIN
+Domaine personnalise detecte dans CNAME : $DOMAINE
+
+  A faire UNE SEULE FOIS, chez ton bureau d'enregistrement :
+    4 enregistrements A sur le domaine nu  ->  185.199.108.153
+                                               185.199.109.153
+                                               185.199.110.153
+                                               185.199.111.153
+    1 enregistrement CNAME  www            ->  $MINUS.github.io.
+
+  Puis, UNE SEULE FOIS, sur GitHub :
+    github.com/$COMPTE/$DEPOT  ->  Settings  ->  Pages
+    Custom domain : $DOMAINE   ->  Save
+    Attends le certificat (quelques minutes), puis coche « Enforce HTTPS »
+
+FIN
+else
+cat <<FIN
 Dernière étape, une seule fois :
-  github.com/$COMPTE/$DEPOT  →  Settings  →  Pages
+  github.com/$COMPTE/$DEPOT  ->  Settings  ->  Pages
   Source : « Deploy from a branch », branche « main », dossier « / (root) »
 
+FIN
+fi
+
+cat <<FIN
 Une à deux minutes plus tard :
 
-  Commander (Yas)     https://$(echo "$COMPTE" | tr 'A-Z' 'a-z').github.io/$DEPOT/?s=yas
-  Commander (Orange)  https://$(echo "$COMPTE" | tr 'A-Z' 'a-z').github.io/$DEPOT/?s=orange
-  Ma journée          https://$(echo "$COMPTE" | tr 'A-Z' 'a-z').github.io/$DEPOT/suivi.html
-  Mise en route       https://$(echo "$COMPTE" | tr 'A-Z' 'a-z').github.io/$DEPOT/reglages.html
+  Commander (Yas)     $BASE/?s=yas
+  Commander (Orange)  $BASE/?s=orange
+  Ma journée          $BASE/suivi.html
+  Mise en route       $BASE/reglages.html
 
 FIN
