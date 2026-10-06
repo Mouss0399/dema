@@ -10,7 +10,12 @@
 <meta property="og:title" content="Commander son déjeuner — Lekk bi">
 <meta property="og:description" content="Choisis ton plat avant la clôture. Pas d'application à installer, pas de compte à créer.">
 <meta property="og:locale" content="fr_SN">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://lekkbi.com/apercu.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Lekk bi — le déjeuner au bureau">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="polices/karla.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 /* Karla, version variable : un seul fichier de 31 Ko pour toutes les graisses
@@ -224,6 +229,16 @@ h1{font-size:22px} h2{font-size:18px}
 body.vitrine .signature{display:none}
 
 /* ------------------------------------------------------------------
+   La vitrine. Elle s'adresse a un traiteur, pas a un employe : celui-ci
+   arrive par le lien de son entreprise et ne voit jamais cette page.
+   Quatre atouts separes par un filet, pas de puces — on reste dans la
+   grammaire du reste du site.
+   ------------------------------------------------------------------ */
+.atout + .atout{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.atout .eyebrow{margin-bottom:5px}
+.note-perdu{margin:16px 2px 0;font-size:12px;color:var(--ink-3);line-height:1.5}
+
+/* ------------------------------------------------------------------
    Garde-fou iOS — doit rester le DERNIER bloc de cette feuille.
    Safari iOS zoome la page des qu'on touche un champ dont la police
    calculee est sous 16 px. Les champs heritent de .lab, qui est a
@@ -317,30 +332,51 @@ input,select,textarea{font-size:16px}
   <!-- adresse nue : ni erreur ni cul-de-sac -->
   <div id="s-accueil" hidden>
     <div class="card">
-      <p class="eyebrow">Le déjeuner au bureau</p>
-      <h1 id="acc-titre">Commander son déjeuner</h1>
-      <p class="sub">Ton traiteur garde son menu et ses habitudes. Toi, tu cliques —
-        pas d'application à installer, pas de compte à créer.</p>
+      <p class="eyebrow">Pour les traiteurs</p>
+      <h1>Tout ton midi dans un seul écran</h1>
+      <p class="sub">Ton groupe WhatsApp ne change pas. Tes clients commandent comme avant —
+        mais au lieu de recompter des messages, tu ouvres une page et tout y est.</p>
     </div>
 
     <div class="card">
-      <p class="eyebrow">Tu travailles dans une entreprise servie ?</p>
-      <p class="sub">Il te faut le lien de <b>ton</b> entreprise : c'est lui qui dit au
-        traiteur d'où vient ta commande. Cherche-le dans le groupe WhatsApp où passe
-        le menu, ou demande-le à ton traiteur.</p>
-      <p class="note">Il ressemble à <code>…/?s=yas</code> — le nom de ton entreprise à la fin.</p>
+      <div class="atout">
+        <p class="eyebrow">Organisation</p>
+        <p class="sub">Ton menu de la semaine s'écrit une fois. Chaque entreprise garde son
+          lien, son heure de clôture, ses prix. Le lundi matin, tout est déjà en place.</p>
+      </div>
+      <div class="atout">
+        <p class="eyebrow">Visibilité</p>
+        <p class="sub">À la clôture : 27 thiéboudiène, 12 lasagnes, 9 jus. Et sous chaque plat,
+          les noms — entreprise par entreprise, sur ton téléphone.</p>
+      </div>
+      <div class="atout">
+        <p class="eyebrow">Facilité</p>
+        <p class="sub">Rien à installer. Tes clients n'ont ni compte ni mot de passe à créer :
+          ils cliquent sur le lien du groupe, ils choisissent, c'est fini. Ceux qui préfèrent
+          t'appeler, tu les ajoutes toi-même.</p>
+      </div>
+      <div class="atout">
+        <p class="eyebrow">Suivi</p>
+        <p class="sub">Chaque règlement se coche quand il arrive. Tu vois qui a payé, qui a
+          envoyé une capture, et qui te doit encore — <b>même si c'était un autre jour</b>.</p>
+      </div>
     </div>
 
     <div class="card" id="acc-traiteur" hidden>
-      <p class="eyebrow">Tu es traiteur ?</p>
-      <p class="sub">Tu écris ton menu une fois pour la semaine. Chaque matin, tes clients
-        commandent depuis leur groupe. À midi tu vois qui a pris quoi, qui a payé, et ce
-        qui manque — par entreprise.</p>
+      <p class="eyebrow">On en parle ?</p>
+      <p class="sub">Montre-moi comment tu fais aujourd'hui — ton menu, ton groupe, ta façon de
+        compter. Je te dis en dix minutes si ça te fait gagner quelque chose. Si la réponse est
+        non, je te le dirai aussi.</p>
       <a class="btn" id="acc-contact" href="#">En parler sur WhatsApp</a>
     </div>
 
+    <p class="note note-perdu">Tu travailles dans une entreprise servie et tu cherches à
+      commander ? Il te faut le lien de <b>ton</b> entreprise — il ressemble à
+      <code>…/?s=yas</code> et se trouve dans le groupe WhatsApp où passe le menu.</p>
+
     <button class="btn ghost sm" id="acc-suivi">J'ai un compte traiteur</button>
   </div>
+
 
   <!-- règlement -->
   <div id="s-pay" hidden>
@@ -404,7 +440,7 @@ var CONFIG = {
 
   // Ce que voit quelqu'un qui tape l'adresse nue, sans lien d'entreprise.
   marque:  "Lekk bi",            // le nom du service — remplace par le tien
-  contact: ""                    // ton numéro WhatsApp, ex. "221771234567".
+  contact: "221781587748"        // numéro WhatsApp affiché aux traiteurs.
                                  // Laissé vide, le bouton « je suis traiteur » n'apparaît pas.
 };
 
@@ -488,13 +524,12 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
   function accueil(){
     $("when").textContent = "";
     $("brand").textContent = CONFIG.marque || "Commander";
-    $("acc-titre").textContent = CONFIG.marque || "Commander son déjeuner";
     document.title = (CONFIG.marque || "Commander") + " — le déjeuner au bureau";
     var num = String(CONFIG.contact || "").replace(/\D/g,"");
     if(num){
       $("acc-traiteur").hidden = false;
       $("acc-contact").href = "https://wa.me/" + num + "?text="
-        + encodeURIComponent("Bonjour, je suis traiteur et je voudrais en savoir plus.");
+        + encodeURIComponent("Bonjour, je suis traiteur et je voudrais voir ce que Lekk bi donnerait chez moi.");
     }
     $("acc-suivi").addEventListener("click", function(){ location.href = "suivi.html"; });
     ecran("accueil");
