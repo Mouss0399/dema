@@ -213,6 +213,17 @@ h1{font-size:22px} h2{font-size:18px}
   body.commande{padding-bottom:calc(var(--pied, 100px) + 20px)}
 
 /* ------------------------------------------------------------------
+   Le traiteur possede l'en-tete : c'est chez lui qu'on commande, c'est
+   son nom qu'on veut voir. Lekk bi signe en bas, discretement. Presence
+   sans concurrence. Masquee sur la page d'accueil, qui est deja la
+   vitrine de Lekk bi — l'y repeter ferait trois fois le meme nom.
+   ------------------------------------------------------------------ */
+.signature{margin:24px 0 4px;text-align:center;font-size:12px;color:var(--ink-3)}
+.signature a{color:var(--ink-2);font-weight:600;text-decoration:none;
+  border-bottom:1px solid var(--line-strong)}
+body.vitrine .signature{display:none}
+
+/* ------------------------------------------------------------------
    Garde-fou iOS — doit rester le DERNIER bloc de cette feuille.
    Safari iOS zoome la page des qu'on touche un champ dont la police
    calculee est sous 16 px. Les champs heritent de .lab, qui est a
@@ -377,6 +388,7 @@ input,select,textarea{font-size:16px}
     <p class="sub" id="ferme-sub"></p>
     <button class="btn ghost sm" id="go-ferme-payer">Je veux quand même régler</button>
   </div>
+  <p class="signature">propulsé par <a id="sig" href="https://lekkbi.com" target="_blank" rel="noopener">Lekk bi</a></p>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -407,6 +419,9 @@ var CONFIG = {
     if(s) CONFIG.site = decodeURIComponent(s).toLowerCase().replace(/[^a-z0-9-]/g, "");
   } catch(e){}
 })();
+
+// la signature porte le meme nom que CONFIG.marque : un seul endroit a changer
+try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marque; } catch(e){}
 /* =================================================================== */
 
 (function(){
@@ -490,6 +505,7 @@ var CONFIG = {
     // le pied fixe recouvre le bas de la page : on réserve la place, et
     // seulement sur l'écran qui le porte
     document.body.classList.toggle("commande", n === "order");
+    document.body.classList.toggle("vitrine", n === "accueil");
     // la hauteur réelle du pied : le bouton et le total peuvent passer à deux
     // lignes selon le libellé. Mesurer vaut mieux que deviner.
     if(n === "order") setTimeout(function(){
