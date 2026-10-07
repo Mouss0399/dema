@@ -419,10 +419,11 @@ input,select,textarea{font-size:16px}
   </div>
 
   <div class="card" id="s-ferme" hidden>
-    <p class="eyebrow">Commandes closes</p>
-    <h1>C'est trop tard pour aujourd'hui</h1>
+    <p class="eyebrow" id="ferme-sur">Commandes closes</p>
+    <h1 id="ferme-titre">C'est trop tard pour aujourd'hui</h1>
     <p class="sub" id="ferme-sub"></p>
-    <button class="btn ghost sm" id="go-ferme-payer">Je veux quand même régler</button>
+    <div class="recap" id="ferme-recap" hidden></div>
+    <button class="btn" id="go-ferme-payer" hidden>Régler maintenant</button>
   </div>
   <p class="signature">propulsé par <a id="sig" href="https://lekkbi.com" target="_blank" rel="noopener">Lekk bi</a></p>
 </div>
@@ -586,8 +587,34 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
       // inscription pour annoncer ensuite que c'est trop tard, c'est faire
       // perdre du temps et créer une fiche pour rien.
       if(!m.ouvert){
-        $("ferme-sub").textContent = "La clôture était à " + m.cloture + ". Reviens demain matin.";
-        $("go-ferme-payer").hidden = !MON_NOM;
+        // Après la clôture, la plupart des gens qui ouvrent la page ont déjà
+        // commandé : ils viennent payer. Leur annoncer « reviens demain » les
+        // renvoie chez eux avec leur dette. On regarde donc d'abord ce qu'ils
+        // doivent — l'information est déjà dans la réponse du serveur — et on
+        // ne parle de la clôture qu'après.
+        var du = (m.deja || []).filter(function(c){ return (c.reste || 0) > 0; });
+        var reste = du.reduce(function(s, c){ return s + c.reste; }, 0);
+
+        if(du.length){
+          $("ferme-sur").textContent   = "À régler";
+          $("ferme-titre").textContent = fcfa(reste) + " à régler";
+          $("ferme-sub").textContent   = "Les commandes sont closes depuis " + m.cloture
+                                       + ", mais tu peux encore payer.";
+          var r = $("ferme-recap"); r.innerHTML = ""; r.hidden = false;
+          du.forEach(function(c){
+            var d = document.createElement("div");
+            var g = document.createElement("span"); g.textContent = c.nom;
+            var dr = document.createElement("span"); dr.textContent = fcfa(c.reste);
+            d.appendChild(g); d.appendChild(dr); r.appendChild(d);
+          });
+          $("go-ferme-payer").hidden = false;
+        } else {
+          $("ferme-sur").textContent   = "Commandes closes";
+          $("ferme-titre").textContent = "C'est trop tard pour aujourd'hui";
+          $("ferme-sub").textContent   = "La clôture était à " + m.cloture + ". Reviens demain matin.";
+          $("ferme-recap").hidden = true;
+          $("go-ferme-payer").hidden = true;
+        }
         if(MON_NOM) $("hello").textContent = pre(MON_NOM);
         ecran("ferme"); return;
       }
