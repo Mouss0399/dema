@@ -107,11 +107,21 @@ point dit l'état. Une légende dirait au lecteur que ce qu'il voit ne suffit pa
 Là où quelqu'un découvre le produit sans contexte — image de partage, vitrine —
 c'est une **ligne d'explication**, pas une baseline :
 
-> **Qui mange quoi, qui a payé.**
+> **Commande ton déjeuner. Le reste est noté.**
 
-Elle n'a pas à tenir sous le mot, donc elle peut dire le produit en entier. Et
-elle corrige le malentendu le plus coûteux — « l'application prend l'argent » —
-sans avoir à s'en expliquer : l'outil **note** qui a payé.
+Elle n'a pas à tenir sous le mot, donc elle peut dire le produit en entier.
+
+Elle s'adresse à **l'employé**, pas au traiteur : l'image de partage est vue
+dans le groupe WhatsApp, par quelqu'un qui veut commander, pas par quelqu'un
+qui surveille. Une ligne écrite du point de vue du traiteur — « qui mange quoi,
+qui a payé » — se lit là comme de la surveillance. Et « le reste est noté »
+reprend le mot de l'application quand un règlement est enregistré, donc elle
+désamorce le malentendu le plus coûteux — « l'application prend l'argent » —
+sans avoir à s'en expliquer.
+
+Une phrase, pas trois : le titre et la description du lien s'affichent déjà
+sous l'image. Ce qui est gravé dans l'image est aussi la seule chose qu'on ne
+peut pas changer sans refabriquer un fichier et attendre le cache.
 
 Si une enseigne ou un pied de facture réclame un jour une baseline, c'est
 **« LE MIDI, RÉGLÉ »** — *réglé* est déjà le mot de l'application quand la jauge
