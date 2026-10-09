@@ -108,6 +108,10 @@ h1{font-size:22px} h2{font-size:18px}
 .nomq{font-size:12px;background:var(--surface-2);border-radius:999px;padding:3px 9px;
   color:var(--ink-2);white-space:nowrap}
 .nomq.paye{background:var(--good-soft);color:var(--good)}
+/* Un règlement que le traiteur a saisi lui-même : l'origine se lit, elle ne
+   se devine pas. Discret — c'est une précision, pas une alerte. */
+.tag-moi{flex:none;font-size:11px;color:var(--ink-3);background:var(--surface-2);
+  border-radius:20px;padding:3px 8px;white-space:nowrap}
 /* L'ordre d'arrivée : une ligne par commande, l'heure en tête de ligne.
    Le montant passe à l'accent quand il reste quelque chose à régler. */
 .arr-titre{margin-top:22px}
@@ -142,7 +146,10 @@ h1{font-size:22px} h2{font-size:18px}
 .row:last-child{border-bottom:0}
 .row .who{flex:1;min-width:0}
 .row .who b{display:block;font-size:16px;font-weight:600;overflow-wrap:break-word}
-.row .who span{display:block;font-size:12px;color:var(--ink-3);overflow-wrap:break-word}
+/* Depuis qu'une ligne peut porter deux boutons, un détail long la faisait
+   tripler de hauteur. Deux lignes au maximum, le reste dans l'infobulle. */
+.row .who span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;font-size:12px;color:var(--ink-3);overflow-wrap:break-word}
 .row .amt{font-family:var(--display);font-weight:700;font-size:16px;flex:none;
   font-variant-numeric:tabular-nums}
 .row .amt.du{color:var(--accent)} .row .amt.ok{color:var(--good)}
@@ -649,6 +656,10 @@ var CONFIG = {
       w.children[1].textContent = det;
       var a = document.createElement("div"); a.className = "amt ok"; a.textContent = fcfa(p.montant);
       r.appendChild(w); r.appendChild(a);
+      if(p.par_traiteur){
+        var tg = document.createElement("span"); tg.className = "tag-moi";
+        tg.textContent = "saisi par toi"; r.appendChild(tg);
+      }
       if(p.preuve){
         var b = document.createElement("button"); b.className = "act"; b.textContent = "Capture";
         b.addEventListener("click", function(){ voirCapture(p.preuve, r, b); });
@@ -674,6 +685,7 @@ var CONFIG = {
         w.innerHTML = "<b></b><span></span>";
         w.children[0].textContent = m.nom;
         w.children[1].textContent = ((d.sites||[]).length > 1 ? m.site + " · " : "") + (m.detail || "—");
+        w.children[1].title = m.detail || "";
         var a = document.createElement("div"); a.className = "amt du"; a.textContent = fcfa(m.reste);
         r.appendChild(w); r.appendChild(a);
         if(m.tel){
@@ -688,10 +700,17 @@ var CONFIG = {
           lien.textContent = "Relancer";
           r.appendChild(lien);
         }
+        if(m.id){
+          var en = document.createElement("button"); en.className = "act";
+          en.textContent = "Encaisser";
+          en.addEventListener("click", function(){ ficheEncaisser(m); });
+          r.appendChild(en);
+        }
         c.appendChild(r);
       });
       var n = document.createElement("p"); n.className = "note";
-      n.textContent = "« Relancer » ouvre WhatsApp avec le message déjà écrit.";
+      n.textContent = "« Relancer » ouvre WhatsApp avec le message déjà écrit. "
+                    + "« Encaisser » note un règlement que tu as reçu toi-même.";
       c.appendChild(n);
     }
     box.appendChild(c);
@@ -844,6 +863,75 @@ var CONFIG = {
     }
   }
 
+  // Quelqu'un paie en espèces à midi, ou envoie par Wave sans jamais rouvrir
+  // le lien. Sans ce panneau, sa ligne reste « pas encore réglé » pour
+  // toujours, et « Relancer » finit par écrire à quelqu'un qui a payé.
+  function ficheEncaisser(m){
+    var f = document.createElement("div");
+    var h = document.createElement("h2"); h.textContent = "Encaisser";
+    var sb = document.createElement("p"); sb.className = "sub";
+    sb.textContent = "Pour un règlement que tu as reçu toi-même. Il est noté comme "
+                   + "pointé : c'est toi qui as vu l'argent arriver.";
+    f.appendChild(h); f.appendChild(sb);
+
+    var qui = document.createElement("div"); qui.className = "row";
+    var w = document.createElement("div"); w.className = "who";
+    w.innerHTML = "<b></b><span></span>";
+    w.children[0].textContent = m.nom;
+    w.children[1].textContent = (m.detail || "—") + " · reste " + fcfa(m.reste);
+    qui.appendChild(w); f.appendChild(qui);
+
+    var l1 = document.createElement("label"); l1.className = "lab"; l1.textContent = "Montant reçu";
+    var inp = document.createElement("input"); inp.id = "en-montant"; inp.type = "number";
+    inp.min = "1"; inp.max = String(m.reste); inp.step = "1"; inp.value = String(m.reste);
+    inp.inputMode = "numeric";
+    l1.appendChild(inp); f.appendChild(l1);
+    var nt = document.createElement("p"); nt.className = "note";
+    nt.textContent = "Laisse le montant tel quel pour solder. Mets moins pour un acompte.";
+    f.appendChild(nt);
+
+    var l2 = document.createElement("label"); l2.className = "lab"; l2.textContent = "Comment";
+    var sel = document.createElement("select"); sel.id = "en-moyen";
+    ((CONF && CONF.moyens) || []).filter(function(x){ return x.actif; })
+      .forEach(function(x){
+        var o = document.createElement("option"); o.value = x.code; o.textContent = x.nom;
+        sel.appendChild(o);
+      });
+    l2.appendChild(sel); f.appendChild(l2);
+
+    var ok = document.createElement("button"); ok.className = "btn"; ok.textContent = "Enregistrer";
+    ok.addEventListener("click", function(){
+      var montant = parseInt($("en-montant").value, 10);
+      if(!(montant > 0)){ toast("Écris un montant"); return; }
+      if(montant > m.reste){ toast("Plus que ce qui reste dû"); return; }
+      ok.disabled = true; ok.textContent = "…";
+      rpc("fn_encaisser", { p_commandes: [m.id], p_moyen: $("en-moyen").value,
+                            p_montant: montant })
+        .then(function(res){
+          fermerP();
+          toast(pre(m.nom) + " · " + fcfa(res.montant)
+                + (res.reste > 0 ? " — reste " + fcfa(res.reste) : " — soldé"));
+          return charger();
+        })
+        .catch(function(e){ toast(e.message); ok.disabled = false; ok.textContent = "Enregistrer"; });
+    });
+    f.appendChild(ok);
+    var an = document.createElement("button"); an.className = "btn ghost sm";
+    an.textContent = "Annuler"; an.addEventListener("click", fermerP);
+    f.appendChild(an);
+
+    // le panneau a besoin de la liste des moyens : elle vient de fn_config
+    if(CONF) ouvrirP(f);
+    else rpc("fn_config").then(function(c){
+      CONF = c;
+      ((CONF.moyens)||[]).filter(function(x){ return x.actif; }).forEach(function(x){
+        var o = document.createElement("option"); o.value = x.code; o.textContent = x.nom;
+        sel.appendChild(o);
+      });
+      ouvrirP(f);
+    }).catch(function(e){ toast(e.message); });
+  }
+
   function ficheClient(x){
     var f = document.createElement("div");
     var h = document.createElement("h2"); h.textContent = "Corriger la fiche";
@@ -943,8 +1031,13 @@ var CONFIG = {
 
     var zone = document.createElement("div");
     (CONF.rubriques||[]).forEach(function(r){
+      // Le serveur filtre sur le jour de l'ARTICLE (fn_menu : « a.jour is null
+      // or a.jour = v_dow »). Filtrer ici sur le drapeau de la RUBRIQUE donnait
+      // deux règles pour la même question : une rubrique dont le drapeau et les
+      // articles ne disaient plus la même chose apparaissait chez l'employé et
+      // disparaissait ici. Une seule règle, celle du serveur.
       var dispo = r.articles.filter(function(a){
-        return a.actif && (!r.par_jour || a.jour === jourDOW);
+        return a.actif && (a.jour === null || a.jour === undefined || a.jour === jourDOW);
       });
       if(!dispo.length) return;
       var t = document.createElement("p"); t.className = "rubt"; t.textContent = r.nom;

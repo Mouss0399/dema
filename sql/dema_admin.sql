@@ -94,12 +94,26 @@ begin
             coalesce(p_ordre, (select coalesce(max(ordre),0)+1 from rubrique where traiteur_id = v_t)))
     returning id into v_id;
   else
+    -- Le déclencheur sur « article » ne surveille que l'article. Si on bascule
+    -- par_jour sans toucher aux articles, la rubrique et ses articles ne disent
+    -- plus la même chose, et la rubrique disparaît d'un écran sur deux.
+    if p_par_jour and exists (select 1 from article a
+                               where a.rubrique_id = p_id and a.jour is null) then
+      raise exception 'Cette rubrique devient « par jour » : donne d''abord un jour à chacun de ses plats.';
+    end if;
+
     update rubrique set nom = trim(p_nom), mode = p_mode, obligatoire = p_obligatoire,
            quantite = p_quantite, par_jour = p_par_jour, offert = p_offert,
            ordre = coalesce(p_ordre, ordre)
      where id = p_id and traiteur_id = v_t
     returning id into v_id;
     if v_id is null then raise exception 'Rubrique introuvable.'; end if;
+
+    -- la rubrique est à jour : le déclencheur accepte maintenant de vider
+    -- les jours devenus interdits
+    if not p_par_jour then
+      update article set jour = null where rubrique_id = p_id and jour is not null;
+    end if;
   end if;
   return v_id;
 end $$;

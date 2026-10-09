@@ -17,6 +17,17 @@ set search_path = public, extensions;
 -- ---------------------------------------------------------------------
 alter table paiement add column if not exists pointe    boolean not null default false;
 alter table paiement add column if not exists pointe_le timestamptz;
+-- Un règlement saisi par le traiteur n'a pas été déclaré par le client :
+-- l'écran doit pouvoir le dire, et il est pointé d'office.
+alter table paiement add column if not exists par_traiteur boolean not null default false;
+
+-- Les espèces sont le cas le plus courant d'un encaissement que le client ne
+-- déclarera jamais lui-même. On l'ajoute à chaque traiteur qui ne l'a pas.
+insert into moyen_paiement (traiteur_id, code, nom, numero, ordre)
+select t.id, 'especes', 'Espèces', null,
+       (select coalesce(max(ordre),0)+1 from moyen_paiement m where m.traiteur_id = t.id)
+  from traiteur t
+on conflict (traiteur_id, code) do nothing;
 
 -- ---------------------------------------------------------------------
 -- 1. Qui a le droit de voir quoi
@@ -162,10 +173,10 @@ begin
 
   -- qui n'a pas payé, nommément, avec son numéro pour la relance
   select coalesce(jsonb_agg(jsonb_build_object(
-           'site', q.site, 'nom', q.nom, 'tel', q.tel,
+           'id', q.id, 'site', q.site, 'nom', q.nom, 'tel', q.tel,
            'reste', q.reste, 'detail', q.detail) order by q.site, q.nom), '[]'::jsonb)
     into v_manquants
-    from (select s.nom as site, pe.nom, pe.tel,
+    from (select c.id, s.nom as site, pe.nom, pe.tel,
                  (c.montant - coalesce(sum(pc.montant_affecte),0))::int as reste,
                  (select string_agg(a.nom || case when l.qte>1 then ' × '||l.qte else '' end, ' + ')
                     from ligne l join article a on a.id=l.article_id
@@ -182,11 +193,13 @@ begin
   select coalesce(jsonb_agg(jsonb_build_object(
            'id', q.id,
            'site', q.site, 'qui', q.qui, 'moyen', q.moyen, 'montant', q.montant,
-           'heure', q.heure, 'preuve', q.preuve, 'pointe', q.pointe, 'pour', q.pour)
+           'heure', q.heure, 'preuve', q.preuve, 'pointe', q.pointe, 'pour', q.pour,
+           'par_traiteur', q.par_traiteur)
            order by q.cree_le desc), '[]'::jsonb)
     into v_paiements
     from (select s.nom as site, pe.nom as qui, coalesce(m.nom,'Non précisé') as moyen,
                  p.id, p.montant, p.cree_le, p.preuve_url as preuve, p.pointe,
+                 p.par_traiteur,
                  to_char(p.cree_le at time zone 'Africa/Dakar','HH24:MI') as heure,
                  (select coalesce(jsonb_agg(pe2.nom order by pe2.nom), '[]'::jsonb)
                     from paiement_commande pc
@@ -567,6 +580,105 @@ end $$;
 -- ---------------------------------------------------------------------
 -- 4. Fermeture : ces fonctions ne sont PAS publiques
 -- ---------------------------------------------------------------------
+-- ---------------------------------------------------------------------
+-- 3 ter. Encaisser : le traiteur enregistre un règlement qu'il a reçu
+-- ---------------------------------------------------------------------
+-- Jusqu'ici une commande ne passait à « réglé » que si le client le déclarait
+-- depuis son téléphone. Or le cas courant est l'inverse : il donne l'argent en
+-- espèces à midi, ou il envoie par Wave sans jamais rouvrir le lien. Sans cette
+-- fonction, la liste des impayés s'éloigne de la vérité chaque jour et le bouton
+-- « Relancer » finit par écrire à des gens qui ont payé.
+--
+-- On écrit dans les mêmes tables que la déclaration client : les totaux, le
+-- bloc « par moyen de paiement » et le statut des commandes suivent tout seuls
+-- (c'est le déclencheur sur paiement_commande qui recalcule).
+--
+-- Un encaissement porte sur UNE personne, UN jour, UNE entreprise : c'est le
+-- geste réel (« Awa m'a donné 3 000 F »). Le montant est libre pour accepter un
+-- acompte, mais il ne peut pas dépasser ce qui reste dû.
+create or replace function fn_encaisser(
+  p_commandes uuid[], p_moyen text, p_montant int default null)
+returns jsonb language plpgsql security definer
+set search_path = public, extensions as $$
+declare
+  v_t uuid; v_pers uuid; v_site uuid; v_jour date; v_moyen uuid;
+  v_np int; v_nj int; v_ns int; v_du int; v_total int; v_reste int;
+  v_pay uuid; v_c record; v_part int;
+begin
+  v_t := fn_exige_traiteur();
+  if coalesce(array_length(p_commandes,1),0) = 0 then
+    raise exception 'Aucune commande sélectionnée.';
+  end if;
+
+  -- verrou d'abord (FOR UPDATE est interdit avec un agrégat), calculs ensuite
+  perform 1 from commande c
+   where c.id = any(p_commandes) and c.statut = 'du'
+     and c.site_id in (select id from site where traiteur_id = v_t)
+   for update;
+
+  select count(distinct personne_id), count(distinct jour), count(distinct site_id)
+    into v_np, v_nj, v_ns
+    from commande
+   where id = any(p_commandes) and statut = 'du'
+     and site_id in (select id from site where traiteur_id = v_t);
+  if coalesce(v_np,0) = 0 then
+    raise exception 'Ces commandes sont déjà réglées, annulées, ou ne sont pas les tiennes.';
+  end if;
+  if v_np > 1 or v_nj > 1 or v_ns > 1 then
+    raise exception 'Un encaissement porte sur une seule personne, un seul jour, une seule entreprise.';
+  end if;
+
+  select personne_id, site_id, jour into v_pers, v_site, v_jour
+    from commande
+   where id = any(p_commandes) and statut = 'du'
+     and site_id in (select id from site where traiteur_id = v_t)
+   limit 1;
+
+  select id into v_moyen from moyen_paiement
+   where traiteur_id = v_t and code = p_moyen and actif;
+  if v_moyen is null then raise exception 'Moyen de paiement inconnu.'; end if;
+
+  -- on encaisse le RESTE dû, pas le total : un acompte a pu tomber avant
+  select coalesce(sum(c.montant - coalesce(pc.affecte,0)),0)::int into v_du
+    from commande c
+    left join lateral (select sum(montant_affecte) as affecte from paiement_commande
+                        where commande_id = c.id) pc on true
+   where c.id = any(p_commandes) and c.statut = 'du';
+  if v_du <= 0 then raise exception 'Il n''y a plus rien à régler sur ces commandes.'; end if;
+
+  v_total := coalesce(p_montant, v_du);
+  if v_total <= 0 then raise exception 'Le montant doit être positif.'; end if;
+  if v_total > v_du then
+    raise exception 'Le montant dépasse ce qui reste dû (% F).', v_du;
+  end if;
+
+  -- pointé d'office : c'est elle qui a vu l'argent arriver
+  insert into paiement (site_id, personne_id, moyen_id, montant, jour,
+                        pointe, pointe_le, par_traiteur)
+  values (v_site, v_pers, v_moyen, v_total, v_jour, true, now(), true)
+  returning id into v_pay;
+
+  v_reste := v_total;
+  for v_c in select c.id, (c.montant - coalesce(pc.affecte,0))::int as du
+               from commande c
+               left join lateral (select sum(montant_affecte) as affecte
+                                    from paiement_commande where commande_id = c.id) pc on true
+              where c.id = any(p_commandes) and c.statut = 'du'
+                and (c.montant - coalesce(pc.affecte,0)) > 0
+              order by c.cree_le loop
+    exit when v_reste <= 0;
+    v_part := least(v_reste, v_c.du);
+    insert into paiement_commande (paiement_id, commande_id, montant_affecte)
+    values (v_pay, v_c.id, v_part)
+    on conflict (paiement_id, commande_id) do update
+      set montant_affecte = paiement_commande.montant_affecte + excluded.montant_affecte;
+    v_reste := v_reste - v_part;
+  end loop;
+
+  return jsonb_build_object('paiement', v_pay, 'montant', v_total,
+                            'reste', v_du - v_total);
+end $$;
+
 -- PostgreSQL donne l'exécution à tout le monde par défaut. On retire, puis on
 -- ne rend qu'aux comptes connectés — et la fonction vérifie elle-même que le
 -- compte est rattaché à un traiteur.
@@ -575,6 +687,7 @@ begin
   execute 'revoke execute on function fn_mon_traiteur()         from public';
   execute 'revoke execute on function fn_tableau(date,text)     from public';
   execute 'revoke execute on function fn_pointer(uuid,boolean)  from public';
+  execute 'revoke execute on function fn_encaisser(uuid[],text,int) from public';
   execute 'revoke execute on function fn_commander_pour(text,text,jsonb,date) from public';
   execute 'revoke execute on function fn_annuler_pour(uuid)                   from public';
   execute 'revoke execute on function fn_clients(text,text)                   from public';
@@ -583,6 +696,7 @@ begin
   if exists (select 1 from pg_roles where rolname = 'authenticated') then
     execute 'grant execute on function fn_tableau(date,text) to authenticated';
     execute 'grant execute on function fn_pointer(uuid,boolean) to authenticated';
+    execute 'grant execute on function fn_encaisser(uuid[],text,int) to authenticated';
     execute 'grant execute on function fn_commander_pour(text,text,jsonb,date) to authenticated';
     execute 'grant execute on function fn_annuler_pour(uuid)                   to authenticated';
     execute 'grant execute on function fn_clients(text,text)                   to authenticated';

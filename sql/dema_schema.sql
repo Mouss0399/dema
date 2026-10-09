@@ -196,6 +196,7 @@ create table paiement (
   preuve_url  text,                                     -- capture, purgée à 60 j
   reference   text,                                     -- référence API (phase 3)
   pointe      boolean not null default false,           -- rapproché du relevé par le traiteur
+  par_traiteur boolean not null default false,          -- saisi par le traiteur, pas déclaré par le client
   pointe_le   timestamptz,
   jour        date not null,
   cree_le     timestamptz not null default now()
@@ -280,7 +281,8 @@ begin
   insert into moyen_paiement (traiteur_id, code, nom, numero, ordre) values
     (t, 'wave', 'Wave',          '76 882 03 12', 1),
     (t, 'om',   'Orange Money',  '76 882 03 12', 2),
-    (t, 'mixx', 'Mix by Yas',    '76 882 03 12', 3);
+    (t, 'mixx', 'Mix by Yas',    '76 882 03 12', 3),
+    (t, 'especes', 'Espèces',   null,           4);
 
   -- « unique » : un seul plat par personne et par jour, comme sur le vote
   -- WhatsApp. « quantite » reste vrai : on peut en prendre deux portions du

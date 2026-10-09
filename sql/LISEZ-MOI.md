@@ -14,6 +14,18 @@ Quand je te livre une correction, seul le fichier concerné est à rejouer.
 `dema_api.sql`, `dema_traiteur.sql` et `dema_admin.sql` remplacent leurs
 fonctions sans toucher aux données.
 
+⚠️ `dema_schema.sql` ne se rejoue **jamais** sur une base en service : il
+efface tout. Quand une colonne nouvelle est nécessaire, elle est ajoutée en
+haut de `dema_traiteur.sql` par un `alter table ... add column if not exists`,
+sans effet si elle existe déjà. Les modifications de `dema_schema.sql` ne
+servent qu'aux installations neuves.
+
+## Encaissement par le traiteur
+
+À rejouer : `dema_traiteur.sql` (la colonne `paiement.par_traiteur`, le moyen
+« Espèces », et `fn_encaisser`), puis `dema_admin.sql` (une rubrique et ses
+plats ne peuvent plus se contredire sur le jour).
+
 ## Rattacher un compte traiteur
 
 Authentication → Users → Add user, avec l'adresse et un mot de passe. Puis :
