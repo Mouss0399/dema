@@ -108,6 +108,17 @@ h1{font-size:22px} h2{font-size:18px}
 .nomq{font-size:12px;background:var(--surface-2);border-radius:999px;padding:3px 9px;
   color:var(--ink-2);white-space:nowrap}
 .nomq.paye{background:var(--good-soft);color:var(--good)}
+/* L'ordre d'arrivée : une ligne par commande, l'heure en tête de ligne.
+   Le montant passe à l'accent quand il reste quelque chose à régler. */
+.arr-titre{margin-top:22px}
+.arr{display:flex;align-items:baseline;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.arr-h{flex:none;font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums;min-width:40px}
+.arr-qui{flex:1;min-width:0}
+.arr-qui b{display:block;font-size:15px;font-weight:600}
+.arr-qui span{display:block;font-size:12px;color:var(--ink-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arr-m{flex:none;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.arr-m.du{color:var(--accent)}
 .qte{font-family:var(--display);font-weight:700;font-size:28px;line-height:1;color:var(--accent);
   min-width:46px;text-align:right;flex:none;font-variant-numeric:tabular-nums}
 .plat .nm{font-size:16px;overflow-wrap:break-word;min-width:0}
@@ -491,6 +502,32 @@ var CONFIG = {
           box.appendChild(bloc);
         });
       });
+    });
+    arrivees(d, box);
+  }
+
+  // À quelle heure chacun a commandé. Si le serveur n'a pas encore la mise à
+  // jour de fn_tableau, la liste est absente et le bloc ne s'affiche pas :
+  // les deux versions cohabitent, l'ordre de déploiement n'a pas d'importance.
+  function arrivees(d, box){
+    var liste = d.arrivees || [];
+    if(!liste.length) return;
+    var t = document.createElement("p"); t.className = "rub arr-titre";
+    t.textContent = "Dans l'ordre d'arrivée";
+    box.appendChild(t);
+    var plusieurs = (d.sites || []).length > 1;
+    liste.forEach(function(c){
+      var r = document.createElement("div"); r.className = "arr";
+      var h = document.createElement("span"); h.className = "arr-h"; h.textContent = c.heure;
+      var w = document.createElement("div"); w.className = "arr-qui";
+      w.innerHTML = "<b></b><span></span>";
+      w.children[0].textContent = c.nom + (c.par ? " · saisie par " + pre(c.par) : "");
+      w.children[1].textContent = (plusieurs ? c.site + " · " : "") + (c.detail || "—");
+      var a = document.createElement("span");
+      a.className = "arr-m" + ((c.reste || 0) > 0 ? " du" : "");
+      a.textContent = fcfa(c.montant);
+      r.appendChild(h); r.appendChild(w); r.appendChild(a);
+      box.appendChild(r);
     });
   }
 

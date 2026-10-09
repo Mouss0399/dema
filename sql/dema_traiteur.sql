@@ -54,6 +54,7 @@ declare
   v_t uuid; v_jour date; v_sites uuid[]; v_tous uuid[];
   v_entreprises jsonb; v_cuisine jsonb; v_canaux jsonb;
   v_manquants jsonb; v_paiements jsonb; v_doublons jsonb; v_jours jsonb;
+  v_arrivees jsonb;
   v_du int; v_enc int; v_cmd int;
 begin
   v_t := fn_mon_traiteur();
@@ -210,6 +211,31 @@ begin
            where p1.site_id = any(v_sites) and p1.fusionnee_vers is null
              and similarity(p1.nom_norm, p2.nom_norm) > 0.55) q;
 
+  -- l'ordre d'arrivee : a quelle heure chacun a commande. C'est ce qu'elle
+  -- demandait pour arbitrer ce qui tombe juste avant la cloture, et pour
+  -- retrouver qui a commande en dernier quand il manque une part.
+  -- cree_le est l'heure de la premiere commande du jour : une modification
+  -- met a jour la meme ligne, elle ne la recree pas.
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'site', q.site, 'nom', q.nom, 'heure', q.heure, 'detail', q.detail,
+           'montant', q.montant, 'reste', q.reste, 'par', q.par)
+           order by q.cree_le), '[]'::jsonb)
+    into v_arrivees
+    from (select s.nom as site, pe.nom, c.cree_le, c.montant::int as montant,
+                 to_char(c.cree_le at time zone 'Africa/Dakar','HH24:MI') as heure,
+                 (c.montant - coalesce((select sum(pc.montant_affecte)
+                                          from paiement_commande pc
+                                         where pc.commande_id = c.id), 0))::int as reste,
+                 (select pe2.nom from personne pe2 where pe2.id = c.commandee_par) as par,
+                 (select string_agg(a.nom || case when l.qte>1 then ' × '||l.qte else '' end, ' + ')
+                    from ligne l join article a on a.id = l.article_id
+                   where l.commande_id = c.id) as detail
+            from commande c
+            join site s on s.id = c.site_id
+            join personne pe on pe.id = c.personne_id
+           where c.site_id = any(v_sites) and c.jour = v_jour
+             and c.statut <> 'annule') q;
+
   -- le total de ce qui est affiché (une entreprise, ou toutes)
   select count(*)::int, coalesce(sum(montant),0)::int into v_cmd, v_du
     from commande where site_id = any(v_sites) and jour = v_jour and statut <> 'annule';
@@ -228,6 +254,7 @@ begin
     'canaux',    v_canaux,
     'manquants', v_manquants,
     'paiements', v_paiements,
+    'arrivees',  v_arrivees,
     'doublons',  v_doublons);
 end $$;
 

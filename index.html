@@ -101,8 +101,11 @@ h1{font-size:22px} h2{font-size:18px}
 .opt.on .box.round::after{content:"";position:absolute;inset:3.5px;left:3.5px;top:3.5px;width:auto;height:auto;
   border:0;border-radius:50%;background:var(--on-accent);transform:none}
 .nmwrap{flex:1;min-width:0}
-.nm{font-weight:500;overflow-wrap:anywhere}
-.who2{font-size:12px;color:var(--ink-3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nm{display:block;font-weight:500;overflow-wrap:anywhere}
+/* .nm et .who2 sont deux spans dans le meme conteneur : sans display:block
+   ils se collent sur une seule ligne — « Ma commandeThiebou guinar ». */
+.who2{display:block;font-size:12px;color:var(--ink-3);margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cnt{flex:none;font-family:var(--display);font-size:12px;font-weight:700;color:var(--ink-2);
   background:var(--surface-2);border-radius:20px;padding:3px 9px;font-variant-numeric:tabular-nums}
 .opt.on .cnt{background:var(--surface)}
@@ -179,6 +182,9 @@ h1{font-size:22px} h2{font-size:18px}
 .tick{width:50px;height:50px;margin:0 auto 12px;border-radius:50%;background:var(--good-soft);display:grid;place-items:center}
 .tick svg{width:25px;height:25px;stroke:var(--good);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .tick.wait{background:var(--warn-soft)} .tick.wait svg{stroke:var(--warn)}
+/* Le vert disait « paiement vérifié ». Rien n'est vérifié à cet instant :
+   l'envoi est noté, le traiteur le confirmera quand il le verra arriver. */
+.tick.neutre{background:var(--surface-2)} .tick.neutre svg{stroke:var(--ink-2)}
 .recap{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:7px;text-align:left}
 .recap div{display:flex;justify-content:space-between;gap:12px;font-size:14px}
 .recap span:first-child{color:var(--ink-2)}
@@ -397,20 +403,24 @@ input,select,textarea{font-size:16px}
   <!-- règlement -->
   <div id="s-pay" hidden>
     <div class="card">
-      <p class="eyebrow">À régler</p>
+      <p class="eyebrow">1 · Ce que tu règles</p>
       <h1 id="pay-total">0 F</h1>
       <p class="sub">Coche ce que ton paiement couvre.</p>
       <div class="opts" id="settle"></div>
       <p class="note">Seules les commandes du jour non réglées apparaissent ici.</p>
     </div>
     <div class="card">
-      <p class="eyebrow">Moyen de paiement</p>
+      <p class="eyebrow">2 · Envoie l'argent</p>
+      <p class="sub">Ouvre ton application de paiement et envoie le montant à ce numéro.
+        Lekk bi ne déplace pas d'argent : c'est toi qui l'envoies.</p>
       <div class="opts" id="moyens"></div>
       <div id="numbox"></div>
     </div>
     <div class="card">
-      <p class="eyebrow">Capture du paiement <span class="opt-tag">facultatif</span></p>
-      <p class="sub">Utile en cas de doute. Le traiteur la voit à côté de ta ligne.</p>
+      <p class="eyebrow">3 · Préviens le traiteur</p>
+      <p class="sub">Une fois l'argent parti, appuie sur le bouton : ta ligne passe en
+        « réglé » chez le traiteur. La capture est facultative — elle l'aide à retrouver
+        ton envoi dans son relevé.</p>
       <div class="drop" id="drop">
         <input type="file" id="fichier" accept="image/*" hidden>
         <button class="btn ghost sm" type="button" id="go-fichier">Choisir une image</button>
@@ -418,7 +428,7 @@ input,select,textarea{font-size:16px}
         <p class="note" id="preuve-etat">Tu peux aussi faire un appui long puis « Coller » ici.</p>
         <img id="apercu" alt="" hidden>
       </div>
-      <button class="btn" id="go-paye">J'ai réglé</button>
+      <button class="btn" id="go-paye">J'ai envoyé l'argent</button>
       <button class="btn ghost sm" id="go-retour">Retour</button>
     </div>
   </div>
@@ -426,8 +436,8 @@ input,select,textarea{font-size:16px}
   <!-- réglé -->
   <div class="card" id="s-fin" hidden>
     <div class="done">
-      <div class="tick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5.2 5.2L20 7"/></svg></div>
-      <h1>Paiement enregistré</h1>
+      <div class="tick neutre"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5.2 5.2L20 7"/></svg></div>
+      <h1>C'est noté</h1>
       <p class="sub" id="fin-sub"></p>
     </div>
     <div class="recap" id="fin-recap"></div>
@@ -1212,9 +1222,9 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
       return aRegler.indexOf(c.id) > -1 && !c.moi; }).map(function(c){ return pre(c.nom); });
     var nomMoyen = ((MENU.moyens||[]).filter(function(m){ return m.code === moyen; })[0]||{}).nom || moyen;
     var attendue = !!PREUVE;
-    $("go-paye").textContent = attendue ? "Envoi de la capture…" : "Enregistrement…";
+    $("go-paye").textContent = attendue ? "Envoi de la capture…" : "On note…";
     envoyerPreuve().then(function(chemin){
-      if(attendue && !chemin) toast("Capture non envoyée — le paiement est bien enregistré");
+      if(attendue && !chemin) toast("Capture non envoyée — ton règlement est quand même noté");
       return rpc("fn_declarer_paiement", { p_slug: CONFIG.site, p_appareil: APPAREIL,
             p_moyen: moyen, p_commandes: aRegler, p_preuve: chemin });
     })
@@ -1235,7 +1245,7 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
         ecran("fin");
       })
       .catch(function(e){ erreur(e.message); })
-      .then(function(){ enCours = false; $("go-paye").textContent = "J'ai réglé"; });
+      .then(function(){ enCours = false; $("go-paye").textContent = "J'ai envoyé l'argent"; });
   });
 
   demarrer();
