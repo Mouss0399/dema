@@ -17,6 +17,9 @@
 <meta property="og:image:alt" content="Lekk bi — le déjeuner au bureau">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="polices/karla.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="marque/icone-192.png">
+<link rel="apple-touch-icon" href="marque/icone-180.png">
 <style>
 /* Karla, version variable : un seul fichier de 31 Ko pour toutes les graisses
    de 200 a 800, servi depuis ce depot. Remplace les sept fichiers et les deux
@@ -46,7 +49,7 @@
   --paper:#15120F; --surface:#1E1A16; --surface-2:#272119; --surface-3:#322A21;
   --line:#352D24; --line-strong:#4B4035;
   --ink:#F3EDE5; --ink-2:#C3B6A8; --ink-3:#95877A;
-  --accent:#F2839F; --accent-soft:#3A1722; --on-accent:#1B0A11;
+  --accent:#F2456F; --accent-soft:#3A1722; --on-accent:#1B0A11;
   --good:#6FCFA2; --good-soft:#12291F;
   --warn:#E5A851; --warn-soft:#2E2113;
   color-scheme:dark;
@@ -61,6 +64,15 @@ body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:
 .top{border-bottom:1px solid var(--line);padding-block:14px 12px;margin-bottom:4px}
 .brand{font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:-.01em}
 .brand span{color:var(--accent)}
+
+/* ------------------------------------------------------------------
+   La marque. Le logotype est un SVG en ligne : aucune requete reseau,
+   net a toute taille, et il prend les couleurs du theme tout seul.
+   Le point du i est le signe de Lekk bi — plein au repos.
+   ------------------------------------------------------------------ */
+.vit-tete{width:138px;margin:2px 0 18px}
+.logo{display:block;height:auto;width:100%;
+  --logo-ink:var(--ink);--logo-accent:var(--accent)}
 .when{font-size:12px;color:var(--ink-3);margin-top:2px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:14px}
 .eyebrow{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.1em;
@@ -75,7 +87,7 @@ h1{font-size:22px} h2{font-size:18px}
 .opts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .opt{display:flex;align-items:center;gap:11px;flex-wrap:wrap;background:var(--surface);
   border:1.5px solid var(--line);border-radius:10px;padding:11px 12px}
-.opt.on{border-color:var(--accent);background:var(--accent-soft)}
+.opt.on{border-color:var(--ink);background:var(--surface-2)}
 .opt.epuise{opacity:.55}
 .hit{display:flex;align-items:center;gap:11px;flex:1;min-width:0;cursor:pointer;background:none;
   border:0;padding:4px 0;font-family:var(--body);font-size:16px;color:inherit;text-align:left}
@@ -83,7 +95,7 @@ h1{font-size:22px} h2{font-size:18px}
 .hit:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 .box{width:19px;height:19px;border-radius:6px;border:1.5px solid var(--line-strong);flex:none;position:relative}
 .box.round{border-radius:50%}
-.opt.on .box{border-color:var(--accent);background:var(--accent)}
+.opt.on .box{border-color:var(--ink);background:var(--ink)}
 .opt.on .box::after{content:"";position:absolute;left:5.5px;top:2.5px;width:5px;height:9px;
   border:solid var(--on-accent);border-width:0 2px 2px 0;transform:rotate(42deg)}
 .opt.on .box.round::after{content:"";position:absolute;inset:3.5px;left:3.5px;top:3.5px;width:auto;height:auto;
@@ -91,8 +103,8 @@ h1{font-size:22px} h2{font-size:18px}
 .nmwrap{flex:1;min-width:0}
 .nm{font-weight:500;overflow-wrap:anywhere}
 .who2{font-size:12px;color:var(--ink-3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cnt{flex:none;font-family:var(--display);font-size:12px;font-weight:700;color:var(--accent);
-  background:var(--accent-soft);border-radius:20px;padding:3px 9px;font-variant-numeric:tabular-nums}
+.cnt{flex:none;font-family:var(--display);font-size:12px;font-weight:700;color:var(--ink-2);
+  background:var(--surface-2);border-radius:20px;padding:3px 9px;font-variant-numeric:tabular-nums}
 .opt.on .cnt{background:var(--surface)}
 .pr{flex:none;font-variant-numeric:tabular-nums;font-weight:600;font-size:14px;color:var(--ink-2)}
 .tag{flex:none;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
@@ -171,8 +183,8 @@ h1{font-size:22px} h2{font-size:18px}
 .recap div{display:flex;justify-content:space-between;gap:12px;font-size:14px}
 .recap span:first-child{color:var(--ink-2)}
 .recap span:last-child{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
-.err{margin-top:12px;padding:11px 13px;border-radius:9px;background:var(--accent-soft);
-  border:1px solid var(--accent);color:var(--accent);font-size:14px}
+.err{margin-top:12px;padding:11px 13px;border-radius:9px;background:var(--surface-2);
+  border:1px solid var(--accent);color:var(--ink);font-size:14px}
 .note{font-size:12px;color:var(--ink-3);line-height:1.55;margin-top:14px;
   border-top:1px solid var(--line);padding-top:12px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));
@@ -227,6 +239,9 @@ h1{font-size:22px} h2{font-size:18px}
 .signature a{color:var(--ink-2);font-weight:600;text-decoration:none;
   border-bottom:1px solid var(--line-strong)}
 body.vitrine .signature{display:none}
+/* Sur la vitrine, l'en-tete est le logotype lui-meme : la barre du haut
+   repeterait le nom juste au-dessus. */
+body.vitrine .top{display:none}
 
 /* ------------------------------------------------------------------
    La vitrine. Elle s'adresse a un traiteur, pas a un employe : celui-ci
@@ -331,6 +346,7 @@ input,select,textarea{font-size:16px}
 
   <!-- adresse nue : ni erreur ni cul-de-sac -->
   <div id="s-accueil" hidden>
+    <div class="vit-tete"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2733 845" role="img" aria-label="Lekk bi"><g transform="translate(40,793) scale(1,-1)"><path fill="var(--logo-ink,#241C18)" d="M189 -5Q152 -5 121.0 10.0Q90 25 71.0 56.5Q52 88 52 141V681H197V193Q197 156 210.5 145.5Q224 135 245 135V0Q235 -2 218.5 -3.5Q202 -5 189 -5ZM538 -9Q465 -9 409.5 22.0Q354 53 323.5 110.0Q293 167 293 244Q293 320 323.5 378.0Q354 436 409.5 468.5Q465 501 538 501Q613 501 668.0 467.0Q723 433 753.0 375.5Q783 318 783 246Q783 233 782.0 221.0Q781 209 780 202H407V306H668L651 263Q651 318 623.5 353.0Q596 388 539 388Q488 388 457.5 357.0Q427 326 427 275V220Q427 165 458.5 134.5Q490 104 546 104Q593 104 620.5 123.0Q648 142 667 170L766 115Q734 56 676.0 23.5Q618 -9 538 -9ZM957 246V265L1157 489H1321L1099 238L1095 286L1326 0H1156ZM856 681H1001V0H856ZM1469 246V265L1669 489H1833L1611 238L1607 286L1838 0H1668ZM1368 681H1513V0H1368Z"/><path fill="var(--logo-accent,#A3123C)" d="M2151 -12Q2087 -12 2039.0 19.5Q1991 51 1964.5 108.5Q1938 166 1938 245Q1938 328 1964.0 385.0Q1990 442 2037.5 471.5Q2085 501 2150 501Q2216 501 2267.0 468.5Q2318 436 2347.0 378.0Q2376 320 2376 245Q2376 170 2347.5 111.5Q2319 53 2268.5 20.5Q2218 -12 2151 -12ZM1880 0V681H2026V353H2017V125H2026L1989 0ZM2123 125Q2168 125 2197.5 158.5Q2227 192 2227 245Q2227 297 2197.5 330.5Q2168 364 2123 364Q2079 364 2049.0 330.5Q2019 297 2019 245Q2019 192 2049.0 158.5Q2079 125 2123 125ZM2599 0H2453V489H2599Z"/><circle fill="var(--logo-accent,#A3123C)" cx="2526.0" cy="652.8" r="99.8"/></g></svg></div>
     <div class="card">
       <p class="eyebrow">Pour les traiteurs</p>
       <h1>Tout ton midi dans un seul écran</h1>
