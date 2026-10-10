@@ -230,11 +230,11 @@ begin
   -- cree_le est l'heure de la premiere commande du jour : une modification
   -- met a jour la meme ligne, elle ne la recree pas.
   select coalesce(jsonb_agg(jsonb_build_object(
-           'site', q.site, 'nom', q.nom, 'heure', q.heure, 'detail', q.detail,
+           'id', q.id, 'site', q.site, 'nom', q.nom, 'heure', q.heure, 'detail', q.detail,
            'montant', q.montant, 'reste', q.reste, 'par', q.par)
            order by q.cree_le), '[]'::jsonb)
     into v_arrivees
-    from (select s.nom as site, pe.nom, c.cree_le, c.montant::int as montant,
+    from (select c.id, s.nom as site, pe.nom, c.cree_le, c.montant::int as montant,
                  to_char(c.cree_le at time zone 'Africa/Dakar','HH24:MI') as heure,
                  (c.montant - coalesce((select sum(pc.montant_affecte)
                                           from paiement_commande pc

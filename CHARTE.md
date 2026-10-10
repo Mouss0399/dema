@@ -63,6 +63,19 @@ Dans le mot, le point est toujours **plein** — un point de *i* doit d'abord se
 lire comme un point. Isolé, le signe montre un état — un disque plein tout seul
 n'est qu'un rond.
 
+Dans le produit il est tracé en **SVG**, pas en image : il prend la couleur du
+thème, reste net à toute taille et ne coûte aucune requête. Deux tracés selon
+la taille, exactement comme la règle de l'onde ci-dessus :
+
+- **sous 28 px**, la surface est droite — un seul arc de cercle, aucun
+  identifiant à inventer, donc autant de jauges qu'on veut sur un écran ;
+- **à partir de 28 px**, la surface est échantillonnée sur l'onde et bornée par
+  le cercle à chaque abscisse, ce qui garantit que le liquide ne déborde jamais
+  de l'anneau.
+
+Le disque du liquide mord d'un cheveu sur l'anneau : bord à bord,
+l'anti-crénelage laisse un liseré clair entre les deux.
+
 Fichiers : `marque/etat-*.png`, `marque/icone-*.png`, `marque/avatar-*.png`,
 `favicon.ico`.
 
@@ -181,6 +194,15 @@ ou n'est pas là :
 Sans cette règle, un plat coché, un compteur et le bouton « payer » portent le
 même rouge, et le bouton n'a plus rien contre quoi ressortir.
 
+**Le signe fait exception.** La jauge porte l'accent en aplat, à toutes les
+tailles et autant de fois qu'il le faut : sa couleur est l'information, pas une
+décoration. C'est justement parce qu'elle prend l'état en charge que le reste
+de l'écran peut rester neutre — la sélection passe à l'encre, les pastilles de
+noms perdent leur vert.
+
+**Le vert ne sert qu'à l'argent réellement reçu** — les totaux encaissés. Il ne
+marque jamais un état de commande : c'est le travail du signe.
+
 Un bouton désactivé sort entièrement de l'accent : fond en surface secondaire,
 texte en tertiaire. Un accent pâli se lit comme un bouton actif.
 
@@ -217,6 +239,10 @@ Rayons de 10 à 12 px sur les cartes et les boutons ; 20 px sur les pastilles ;
 0,235 du côté sur l'icône d'application.
 **Aucune ombre portée. Aucun dégradé. Aucune icône décorative.** La séparation se
 fait au filet — c'est une grammaire d'imprimé, pas d'interface logicielle.
+
+Un `box-shadow: inset` n'est pas une ombre : c'est un filet tracé à l'intérieur,
+le seul moyen d'épaissir une bordure sans déplacer ce qu'elle entoure. Il est
+permis. Une ombre portée — un `box-shadow` sans `inset` — ne l'est pas.
 
 ## Ton
 

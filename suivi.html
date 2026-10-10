@@ -93,32 +93,46 @@ h1{font-size:22px} h2{font-size:18px}
 .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
 .chip{border:1.5px solid var(--line);border-radius:999px;padding:6px 13px;font-size:14px;
   background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:var(--body)}
-.chip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+/* « Choisi » est une information neutre : elle se marque à l'encre. L'accent
+   reste pour ce qui demande une action, sinon plus rien ne ressort. */
+.chip.on{border-color:var(--ink);background:var(--surface-2);color:var(--ink);font-weight:600}
 /* onglets */
 .tabs{display:flex;gap:0;margin-top:14px;border-bottom:1px solid var(--line)}
 .tab{flex:1;padding:11px 4px;border:0;background:none;color:var(--ink-3);font-family:var(--display);
   font-weight:600;font-size:14px;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px}
-.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.tab.on{color:var(--ink);border-bottom-color:var(--accent)}
 .tab b{display:block;font-size:18px;line-height:1.2}
 /* cuisine */
 .platbloc{padding:12px 0;border-bottom:1px solid var(--line)}
 .platbloc:last-child{border-bottom:0;padding-bottom:0}
 .plat{display:flex;align-items:baseline;gap:12px}
 .qui{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 0 58px}
-.nomq{font-size:12px;background:var(--surface-2);border-radius:999px;padding:3px 9px;
+/* Le signe de Lekk bi : un disque qui se remplit par le bas. Dessiné en SVG
+   et non en image — il suit la couleur du thème, reste net à toute taille et
+   ne coûte aucune requête. C'est le MÊME objet que le point du i du logotype :
+   le logo et l'indicateur d'état ne font qu'un.
+   L'anneau s'épaissit quand le disque est petit, sinon il disparaît. */
+.jauge{flex:none;display:block}
+.jauge .anneau{fill:none;stroke:var(--ink-3)}
+.jauge .liquide{fill:var(--accent)}
+.jauge.entame .anneau{stroke:var(--accent)}
+
+/* Les noms sous chaque plat. Le vert disait « réglé » à la place du signe ;
+   c'est la jauge qui le dit maintenant, et la pastille redevient neutre. */
+.nomq{display:inline-flex;align-items:center;gap:6px;font-size:12px;
+  background:var(--surface-2);border-radius:999px;padding:3px 9px 3px 5px;
   color:var(--ink-2);white-space:nowrap}
-.nomq.paye{background:var(--good-soft);color:var(--good)}
 /* Un règlement que le traiteur a saisi lui-même : l'origine se lit, elle ne
    se devine pas. Discret — c'est une précision, pas une alerte. */
-.tag-moi{flex:none;font-size:11px;color:var(--ink-3);background:var(--surface-2);
+.tag-moi{flex:none;font-size:12px;color:var(--ink-3);background:var(--surface-2);
   border-radius:20px;padding:3px 8px;white-space:nowrap}
 /* L'ordre d'arrivée : une ligne par commande, l'heure en tête de ligne.
    Le montant passe à l'accent quand il reste quelque chose à régler. */
 .arr-titre{margin-top:22px}
 .arr{display:flex;align-items:baseline;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
-.arr-h{flex:none;font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums;min-width:40px}
+.arr-h{flex:none;font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;min-width:40px}
 .arr-qui{flex:1;min-width:0}
-.arr-qui b{display:block;font-size:15px;font-weight:600}
+.arr-qui b{display:block;font-size:16px;font-weight:600}
 .arr-qui span{display:block;font-size:12px;color:var(--ink-3);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .arr-m{flex:none;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
@@ -142,9 +156,10 @@ h1{font-size:22px} h2{font-size:18px}
 .tile.du b{color:var(--accent)}
 .tile.ok b{color:var(--good)}
 /* lignes nommées */
-.row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 0;
+  border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
-.row .who{flex:1;min-width:0}
+.row .who{flex:1 1 150px;min-width:0}
 .row .who b{display:block;font-size:16px;font-weight:600;overflow-wrap:break-word}
 /* Depuis qu'une ligne peut porter deux boutons, un détail long la faisait
    tripler de hauteur. Deux lignes au maximum, le reste dans l'infobulle. */
@@ -457,6 +472,95 @@ var CONFIG = {
     });
   }
 
+  // Le signe, en SVG. niveau va de 0 (rien de réglé) à 1 (plus rien à devoir).
+  // Le liquide est un segment de disque : un seul arc, pas d'identifiant à
+  // inventer, donc autant de jauges qu'on veut sur une page.
+  function jauge(niveau, taille){
+    var NS = "http://www.w3.org/2000/svg";
+    var niv = Math.max(0, Math.min(1, niveau || 0));
+    // l'anneau s'épaissit quand le disque rétrécit, sinon il disparaît.
+    // Les trois valeurs sont celles de la charte, en centièmes de diamètre.
+    var ep  = taille >= 48 ? 8.5 : (taille >= 28 ? 10.5 : 13.5);
+    var s = document.createElementNS(NS, "svg");
+    s.setAttribute("viewBox", "0 0 100 100");
+    s.setAttribute("aria-hidden", "true");
+    s.setAttribute("class", "jauge" + (niv > 0 ? " entame" : ""));
+    s.style.width = s.style.height = taille + "px";
+
+    var an = document.createElementNS(NS, "circle");
+    an.setAttribute("class", "anneau");
+    an.setAttribute("cx", 50); an.setAttribute("cy", 50);
+    an.setAttribute("r", 50 - ep / 2);
+    an.setAttribute("stroke-width", ep);
+    s.appendChild(an);
+
+    if(niv > 0){
+      // on mord d'un cheveu sur l'anneau : bord à bord, l'anti-crénelage
+      // laisse un liseré clair entre les deux
+      var r = 50 - ep + 0.6;
+      var el;
+      if(niv >= 1){
+        el = document.createElementNS(NS, "circle");
+        el.setAttribute("cx", 50); el.setAttribute("cy", 50); el.setAttribute("r", r);
+      } else {
+        var y0 = 50 + r - 2 * r * niv;                 // le niveau au repos
+        el = document.createElementNS(NS, "path");
+        if(taille < 28){
+          // Sous 28 px l'onde n'a plus la place d'exister : la surface est droite.
+          // Ce n'est pas un raccourci, c'est la règle de la charte — une ondulation
+          // d'un demi-pixel ne se lit pas, elle salit le bord.
+          var w = Math.sqrt(Math.max(0, r * r - (y0 - 50) * (y0 - 50)));
+          el.setAttribute("d", "M" + (50 - w).toFixed(2) + "," + y0.toFixed(2)
+            + "A" + r + "," + r + " 0 " + (y0 < 50 ? 1 : 0) + " 0 "
+            + (50 + w).toFixed(2) + "," + y0.toFixed(2) + "Z");
+        } else {
+          el.setAttribute("d", onde(r, y0, niv));
+        }
+      }
+      el.setAttribute("class", "liquide");
+      s.appendChild(el);
+    }
+    return s;
+  }
+
+  // La surface ondulée, au-dessus de 28 px. Longueur d'onde 1,90 fois le
+  // diamètre et amplitude 0,036 : c'est long, donc on voit moins d'une période
+  // et la surface se lit comme un liquide incliné. Plus court, elle se lit
+  // comme une colline. L'amplitude s’éteint près du vide et du plein, où une
+  // vague n'aurait aucun sens.
+  // On échantillonne au lieu de tracer un arc : la surface est bornée par le
+  // cercle à chaque abscisse, donc le liquide ne peut pas déborder de l'anneau.
+  function onde(r, y0, niv){
+    var LAM = 1.90 * 2 * r, AMP = 0.036 * 2 * r, PH = 1.1;
+    var att = Math.min(1, (1 - niv) / 0.20) * Math.min(1, niv / 0.10);
+    var amp = AMP * att, N = 40, haut = [], bas = [], i, x, h, y;
+    for(i = 0; i <= N; i++){
+      x = 50 - r + (2 * r) * i / N;
+      h = Math.sqrt(Math.max(0, r * r - (x - 50) * (x - 50)));
+      y = y0 + amp * Math.sin(2 * Math.PI * x / LAM + PH)
+             + amp * 0.45 * Math.sin(2 * Math.PI * x / (LAM * 0.43) + PH * 1.7);
+      y = Math.max(50 - h, Math.min(50 + h, y));       // jamais hors du disque
+      haut.push([x, y]); bas.push([x, 50 + h]);
+    }
+    var d = "M" + haut[0][0].toFixed(2) + "," + haut[0][1].toFixed(2);
+    for(i = 1; i <= N; i++) d += "L" + haut[i][0].toFixed(2) + "," + haut[i][1].toFixed(2);
+    for(i = N; i >= 0; i--) d += "L" + bas[i][0].toFixed(2) + "," + bas[i][1].toFixed(2);
+    return d + "Z";
+  }
+
+  // Ce qui est réglé sur une commande, entre 0 et 1. « arrivees » porte le
+  // montant et le reste de chaque commande du jour : les autres listes n'ont
+  // qu'à s'y référer par identifiant, au lieu de redemander au serveur.
+  function part(cmd){
+    if(!cmd || !cmd.montant) return 1;
+    return (cmd.montant - (cmd.reste || 0)) / cmd.montant;
+  }
+  function parId(d, id){
+    var l = d.arrivees || [];
+    for(var i = 0; i < l.length; i++) if(l[i].id === id) return l[i];
+    return null;
+  }
+
   function cuisine(d){
     var box = $("v-cuisine"); box.innerHTML = "";
     if(!(d.cuisine||[]).length){
@@ -499,8 +603,11 @@ var CONFIG = {
               var f = pre(p2.nom), reste = String(p2.nom).split(" ").slice(1).join(" ");
               var lib = (compte[f] > 1 && reste) ? f + " " + reste.charAt(0).toUpperCase() + "." : f;
               var sp = document.createElement("span");
-              sp.className = "nomq" + (p2.paye ? " paye" : "");
-              sp.textContent = lib + (p2.qte > 1 ? " ×" + p2.qte : "");
+              sp.className = "nomq";
+              sp.appendChild(jauge(p2.paye ? 1 : 0, 16));
+              var tx = document.createElement("span");
+              tx.textContent = lib + (p2.qte > 1 ? " ×" + p2.qte : "");
+              sp.appendChild(tx);
               sp.title = p2.nom + (p2.paye ? " · réglé" : " · pas encore réglé");
               g.appendChild(sp);
             });
@@ -525,6 +632,7 @@ var CONFIG = {
     var plusieurs = (d.sites || []).length > 1;
     liste.forEach(function(c){
       var r = document.createElement("div"); r.className = "arr";
+      r.appendChild(jauge(part(c), 18));
       var h = document.createElement("span"); h.className = "arr-h"; h.textContent = c.heure;
       var w = document.createElement("div"); w.className = "arr-qui";
       w.innerHTML = "<b></b><span></span>";
@@ -687,6 +795,11 @@ var CONFIG = {
         w.children[1].textContent = ((d.sites||[]).length > 1 ? m.site + " · " : "") + (m.detail || "—");
         w.children[1].title = m.detail || "";
         var a = document.createElement("div"); a.className = "amt du"; a.textContent = fcfa(m.reste);
+        // un acompte déjà tombé se voit : le disque est à moitié plein.
+        // Sans la commande correspondante (serveur pas encore à jour), on
+        // montre un disque vide plutôt que d'inventer un niveau.
+        var cmd = parId(d, m.id);
+        r.appendChild(jauge(cmd ? part(cmd) : 0, 20));
         r.appendChild(w); r.appendChild(a);
         if(m.tel){
           // la relance qu'elle fait déjà à la main, en un geste
