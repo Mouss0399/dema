@@ -35,6 +35,13 @@ Il ne vient pas d'un objet rapporté — ni assiette, ni cloche, ni couvert. Il
 vient de ce que le produit mesure : le reste dû. C'est pour ça qu'il porte une
 information au lieu d'en promettre une.
 
+**Le niveau est une part de l'aire, pas de la hauteur.** Un disque ne se remplit
+pas comme un verre droit : au quart de sa hauteur il n'est coloré qu'au
+huitième. Si on remplissait à la hauteur, « 2 000 F sur 9 000 » afficherait un
+disque qui en paraîtrait un sixième, et le chiffre à côté démentirait l'image.
+Le tracé inverse donc l'aire du segment circulaire. Écart mesuré entre la part
+demandée et la part réellement colorée : moins de deux points.
+
 | Niveau | Sens | Dans l'écran |
 |---|---|---|
 | vide (anneau seul, en texte tertiaire) | rien n'est payé | en attente |
@@ -52,6 +59,14 @@ de 48 px, 0,105 entre 28 et 48, 0,135 en dessous.
 
 Tout est tracé en suréchantillonnage ×8 puis réduit en Lanczos. Un cercle tracé
 à la taille finale montre ses pixels, et ça se voit.
+
+### Où il sert en grand
+
+En tête de l'onglet « Encaissé », un disque de 92 px donne la part de la journée
+déjà rentrée, avant même qu'on lise les montants. C'est le seul endroit du
+produit où le signe est **regardé** plutôt que parcouru — et donc le seul où il
+est assez grand pour que l'onde existe. Partout ailleurs il fait 16 à 20 px,
+où la charte veut une surface droite.
 
 ### Où il sert seul
 

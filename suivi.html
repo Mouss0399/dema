@@ -148,6 +148,16 @@ h1{font-size:22px} h2{font-size:18px}
   margin:14px 0 2px;font-family:var(--display);font-weight:600}
 /* tuiles */
 .tiles{display:flex;gap:9px;margin-top:4px}
+/* Le bilan de la journée : le disque dit la proportion, les trois lignes
+   disent les montants. C'est la seule jauge assez grande pour porter l'onde. */
+.bilan{display:flex;align-items:center;gap:20px;margin-top:8px}
+.bilan .chiffres{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.bilan .l{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.bilan .l i{font-style:normal;font-size:14px;color:var(--ink-3)}
+.bilan .l b{font-family:var(--display);font-weight:700;font-size:16px;
+  font-variant-numeric:tabular-nums}
+.bilan .l.ok b{font-size:18px;color:var(--good)}
+.bilan .l.du b{color:var(--accent)}
 .tile{flex:1;background:var(--surface-2);border-radius:10px;padding:12px 11px}
 .tile i{display:block;font-style:normal;font-size:12px;letter-spacing:.07em;text-transform:uppercase;
   color:var(--ink-3);font-family:var(--display);font-weight:600}
@@ -503,7 +513,7 @@ var CONFIG = {
         el = document.createElementNS(NS, "circle");
         el.setAttribute("cx", 50); el.setAttribute("cy", 50); el.setAttribute("r", r);
       } else {
-        var y0 = 50 + r - 2 * r * niv;                 // le niveau au repos
+        var y0 = surface(r, niv);                      // le niveau au repos
         el = document.createElementNS(NS, "path");
         if(taille < 28){
           // Sous 28 px l'onde n'a plus la place d'exister : la surface est droite.
@@ -521,6 +531,23 @@ var CONFIG = {
       s.appendChild(el);
     }
     return s;
+  }
+
+  // Où poser la surface pour qu'une part « niv » du DISQUE soit colorée.
+  // Un disque ne se remplit pas comme un verre droit : à mi-hauteur il est
+  // à moitié plein, mais au quart de sa hauteur il n'est coloré qu'au
+  // huitième. Si on remplissait à la hauteur, « 22 % réglé » afficherait un
+  // disque qui en paraîtrait 16 — et le chiffre à côté démentirait l'image.
+  // On inverse donc l'aire du segment circulaire, par dichotomie.
+  function surface(r, niv){
+    var a = -1, b = 1, m, part, i, th;
+    for(i = 0; i < 26; i++){
+      m = (a + b) / 2;
+      th = 2 * Math.acos(m);
+      part = (th - Math.sin(th)) / (2 * Math.PI);   // aire sous la corde
+      if(part > niv) a = m; else b = m;
+    }
+    return 50 + r * ((a + b) / 2);
   }
 
   // La surface ondulée, au-dessus de 28 px. Longueur d'onde 1,90 fois le
@@ -649,13 +676,20 @@ var CONFIG = {
   function argent(d, tot){
     var box = $("v-argent"); box.innerHTML = "";
     var c1 = document.createElement("div"); c1.className = "card";
-    c1.innerHTML = '<p class="eyebrow">La journée</p><div class="tiles">'
-      + '<div class="tile"><i>Commandé</i><b></b></div>'
-      + '<div class="tile ok"><i>Encaissé</i><b></b></div>'
-      + '<div class="tile du"><i>Reste</i><b></b></div></div>';
-    var bs = c1.querySelectorAll(".tile b");
+    c1.innerHTML = '<p class="eyebrow">La journée</p><div class="bilan">'
+      + '<div class="chiffres">'
+      + '<div class="l"><i>Commandé</i><b></b></div>'
+      + '<div class="l ok"><i>Encaissé</i><b></b></div>'
+      + '<div class="l du"><i>Reste</i><b></b></div></div></div>';
+    var bs = c1.querySelectorAll(".l b");
     bs[0].textContent = fcfa(tot.du); bs[1].textContent = fcfa(tot.encaisse);
     bs[2].textContent = fcfa(tot.reste);
+    // Le seul endroit du produit où le signe est regardé plutôt que parcouru :
+    // la part de la journée déjà rentrée, d'un coup d'œil. C'est aussi le seul
+    // où il est assez grand pour que l'onde existe.
+    var niv = tot.du > 0 ? Math.min(1, tot.encaisse / tot.du) : 0;
+    c1.querySelector(".bilan").insertBefore(jauge(niv, 92),
+                                            c1.querySelector(".chiffres"));
     box.appendChild(c1);
 
     var c2 = document.createElement("div"); c2.className = "card";
