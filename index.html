@@ -178,6 +178,12 @@ h1{font-size:22px} h2{font-size:18px}
 .pay .num{font-family:var(--display);font-weight:600;font-size:18px;font-variant-numeric:tabular-nums}
 .copy{appearance:none;border:1.5px solid var(--line-strong);background:var(--surface);color:var(--ink);
   border-radius:8px;padding:8px 11px;font-family:var(--body);font-size:14px;cursor:pointer;flex:none}
+/* Deux encadrés qui se suivent — le numéro, puis le montant. Le second
+   appartient au même bloc : il n'a pas besoin de l'écart complet. */
+.pay + .pay{margin-top:8px}
+/* Le repli du bouton « Ouvrir Wave ». Une précision rattachée au bouton qui
+   la précède, donc pas de filet au-dessus : ce n'est pas une nouvelle idée. */
+.repli{font-size:12px;color:var(--ink-3);line-height:1.55;margin:9px 0 0}
 .done{text-align:center;padding:8px 0 2px}
 .tick{width:50px;height:50px;margin:0 auto 12px;border-radius:50%;background:var(--good-soft);display:grid;place-items:center}
 .tick svg{width:25px;height:25px;stroke:var(--good);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
@@ -1111,19 +1117,71 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
       var c = document.createElement("button"); c.className = "copy"; c.type = "button"; c.textContent = "Copier";
       c.addEventListener("click", function(){ copier(m2.numero); });
       p.appendChild(c); nb.appendChild(p);
+
+      // Le montant se retape à la main dans l'application de paiement : c'est
+      // la dernière transcription qui reste, et celle qui coûte le plus cher
+      // quand elle rate — un zéro de trop et l'envoi part faux. On l'affiche
+      // lisible (« 3 000 F ») mais on copie les chiffres nus : un champ
+      // « montant » refuse les espaces et la lettre F.
+      var mt = somme();
+      if(mt > 0){
+        var q = document.createElement("div"); q.className = "pay";
+        q.innerHTML = '<div><div class="cap"></div><div class="num" id="montant"></div></div>';
+        q.querySelector(".cap").textContent = "Montant à envoyer";
+        q.querySelector(".num").textContent = fcfa(mt);
+        var c2 = document.createElement("button"); c2.className = "copy"; c2.type = "button";
+        c2.textContent = "Copier";
+        c2.addEventListener("click", function(){ copier(String(mt), "montant", "Montant"); });
+        q.appendChild(c2); nb.appendChild(q);
+      }
+
+      // Wave répond au lien « wave:// » : un tapotement au lieu de sortir de
+      // la page et d'aller chercher l'icône. Elle ne sait pas se pré-remplir
+      // — les paramètres sont ignorés, c'est mesuré — donc on ne promet que
+      // l'ouverture, et le numéro reste à copier.
+      //
+      // Un bouton qui ne fait rien chez qui n'a pas l'application serait pire
+      // que pas de bouton. On regarde donc si la page se cache : c'est le seul
+      // signe fiable qu'autre chose est passé devant. Le focus, lui, se perd
+      // aussi sur une alerte système — l'essai précédent s'est fait prendre
+      // ainsi, tout ressortait positif. Toujours visible au bout d'une
+      // seconde et demie : on le dit.
+      if(m2.code === "wave"){
+        var repli = document.createElement("p"); repli.className = "repli";
+        repli.hidden = true;
+        repli.textContent = "Wave ne s'est pas ouverte ? Copie le numéro et le "
+                          + "montant, puis ouvre-la toi-même.";
+        var ow = document.createElement("button"); ow.type = "button";
+        ow.className = "btn ghost sm"; ow.textContent = "Ouvrir Wave";
+        ow.addEventListener("click", function(){
+          var parti = false;
+          var vu = function(){ if(document.hidden) parti = true; };
+          document.addEventListener("visibilitychange", vu);
+          setTimeout(function(){
+            document.removeEventListener("visibilitychange", vu);
+            if(!parti) repli.hidden = false;
+          }, 1500);
+          try { window.location.href = "wave://"; }
+          catch(e){ repli.hidden = false; }
+        });
+        nb.appendChild(ow); nb.appendChild(repli);
+      }
     }
     $("go-paye").disabled = aRegler.length === 0;
   }
-  function copier(txt){
+  // Deux choses se copient désormais. Quand le presse-papiers est refusé, on
+  // sélectionne le texte à la place : encore faut-il sélectionner le bon.
+  function copier(txt, cible, quoi){
     var ko = function(){
-      var el = $("numero"); if(!el){ toast("Copie indisponible"); return; }
+      var el = $(cible || "numero"); if(!el){ toast("Copie indisponible"); return; }
       var r = document.createRange(); r.selectNodeContents(el);
       var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
       toast("Sélectionné — copie-le");
     };
     try {
       if(navigator.clipboard && navigator.clipboard.writeText)
-        navigator.clipboard.writeText(String(txt).replace(/ /g,"")).then(function(){ toast("Numéro copié"); }, ko);
+        navigator.clipboard.writeText(String(txt).replace(/ /g,""))
+          .then(function(){ toast((quoi || "Numéro") + " copié"); }, ko);
       else ko();
     } catch(e){ ko(); }
   }
