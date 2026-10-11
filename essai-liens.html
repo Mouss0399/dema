@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Essai des liens d'application</title>
+<meta name="robots" content="noindex">
+<link rel="preload" href="polices/karla.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:"Karla";src:url("polices/karla.woff2") format("woff2");
+  font-weight:200 800;font-display:swap}
+:root{
+  --paper:#FAF7F2; --surface:#FFFFFF; --surface-2:#F2EDE5;
+  --line:#E3DACE; --ink:#241C18; --ink-2:#5A4C43; --ink-3:#8B7B6E;
+  --accent:#A3123C; --good:#1F6B4A; --warn:#9A5B06;
+  --display:"Karla",ui-sans-serif,system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#15120F; --surface:#1E1A16; --surface-2:#272119;
+  --line:#352D24; --ink:#F3EDE5; --ink-2:#C3B6A8; --ink-3:#95877A;
+  --accent:#F2456F; --good:#6FCFA2; --warn:#E5A851;
+  color-scheme:dark;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--display);font-size:16px;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto;padding:22px 16px 60px}
+h1{font-size:22px;font-weight:800;letter-spacing:-.015em;margin:14px 0 6px}
+.sub{font-size:14px;color:var(--ink-2);margin:0 0 4px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);margin:26px 0 8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:14px;margin-bottom:10px}
+.essai{display:flex;align-items:center;gap:12px}
+.essai .quoi{flex:1;min-width:0}
+.essai b{display:block;font-size:16px;font-weight:600}
+.essai code{display:block;font-size:12px;color:var(--ink-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,monospace}
+.btn{flex:none;border:1.5px solid var(--line);background:var(--surface-2);
+  color:var(--ink);font-family:var(--display);font-weight:600;font-size:14px;
+  border-radius:9px;padding:9px 14px;cursor:pointer}
+.etat{margin-top:10px;font-size:14px;font-weight:600}
+.etat.rien{color:var(--ink-3)}
+.etat.ouvert{color:var(--good)}
+.etat.attente{color:var(--warn)}
+.note{font-size:12px;color:var(--ink-3);line-height:1.55;margin-top:14px}
+.gros{display:block;width:100%;margin-top:16px;border:0;border-radius:10px;
+  background:var(--accent);color:#fff;font-family:var(--display);font-weight:600;
+  font-size:16px;padding:14px;cursor:pointer}
+pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+  padding:12px;font-size:12px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="sub">Lekk bi · page d'essai</p>
+  <h1>Est-ce qu'un lien peut ouvrir Wave ou Orange Money ?</h1>
+  <p class="sub">Tape chaque bouton l'un après l'autre. Si une application s'ouvre, reviens
+    ici : la ligne passera toute seule en « a ouvert quelque chose ». Rien à noter.</p>
+
+  <p class="eyebrow">D'abord les témoins</p>
+  <p class="sub" style="margin-bottom:10px">Ces deux-là doivent marcher. S'ils échouent,
+    c'est la détection qui est cassée et le reste de la page ne veut rien dire.</p>
+  <div id="temoins"></div>
+
+  <p class="eyebrow">Wave</p>
+  <div id="wave"></div>
+
+  <p class="eyebrow">Orange Money / Max it</p>
+  <div id="orange"></div>
+
+  <p class="eyebrow">Le résultat</p>
+  <div class="card">
+    <pre id="bilan">Rien encore.</pre>
+    <button class="gros" id="copier">Copier le résultat</button>
+    <p class="note">Copie-le et renvoie-le-moi, ou fais simplement une capture de cette page.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(i){ return document.getElementById(i); };
+
+  // Chaque essai : un libellé, l'URL, et la plateforme où il a un sens.
+  var ESSAIS = [
+    ["temoins", "Fiche Wave sur le Play Store", "https://play.google.com/store/apps/details?id=com.wave.personal", "Android"],
+    ["temoins", "Fiche Wave sur l'App Store", "https://apps.apple.com/sn/app/id1523884528", "iPhone"],
+
+    ["wave", "Schéma nu", "wave://", "les deux"],
+    ["wave", "Schéma avec destinataire et montant", "wave://send?to=221781587748&amount=3000", "les deux"],
+    ["wave", "Ancien nom de la société", "sendwave://", "les deux"],
+    ["wave", "Lien universel", "https://pay.wave.com/", "les deux"],
+    ["wave", "Intention Android vers le paquet connu",
+     "intent://ouvrir/#Intent;scheme=wave;package=com.wave.personal;end", "Android"],
+
+    ["orange", "Schéma Orange Money", "orangemoney://", "les deux"],
+    ["orange", "Schéma Max it", "maxit://", "les deux"],
+    ["orange", "Schéma Orange", "orange://", "les deux"],
+    ["orange", "Code USSD #144#", "tel:%23144%23", "les deux"]
+  ];
+
+  var resultats = {};
+  try {
+    resultats = JSON.parse(sessionStorage.getItem("essai_liens") || "{}");
+  } catch(e){ resultats = {}; }
+
+  function garder(){
+    try { sessionStorage.setItem("essai_liens", JSON.stringify(resultats)); } catch(e){}
+  }
+
+  var enCours = null, depart = 0, minuteur = null;
+
+  // La seule mesure fiable sans rien demander : si la page passe en arrière-plan
+  // dans la seconde qui suit le tapotement, c'est que quelque chose s'est ouvert.
+  function partiAilleurs(){
+    if(!enCours) return;
+    if(Date.now() - depart < 2500){
+      resultats[enCours] = "ouvert";
+      garder(); rendre();
+    }
+    enCours = null; clearTimeout(minuteur);
+  }
+  document.addEventListener("visibilitychange", function(){
+    if(document.hidden) partiAilleurs();
+  });
+  window.addEventListener("pagehide", partiAilleurs);
+  window.addEventListener("blur", partiAilleurs);
+
+  function essayer(url){
+    enCours = url; depart = Date.now();
+    resultats[url] = "attente"; garder(); rendre();
+    clearTimeout(minuteur);
+    minuteur = setTimeout(function(){
+      if(resultats[url] === "attente"){ resultats[url] = "rien"; garder(); rendre(); }
+      enCours = null;
+    }, 2600);
+    try { window.location.href = url; }
+    catch(e){ resultats[url] = "rien"; garder(); rendre(); }
+  }
+
+  var LIB = { ouvert:"a ouvert quelque chose", rien:"rien ne s'est passé",
+              attente:"on regarde…" };
+
+  function rendre(){
+    ["temoins","wave","orange"].forEach(function(z){ $(z).innerHTML = ""; });
+    ESSAIS.forEach(function(e){
+      var zone = e[0], nom = e[1], url = e[2], plat = e[3];
+      var c = document.createElement("div"); c.className = "card";
+      var l = document.createElement("div"); l.className = "essai";
+      var q = document.createElement("div"); q.className = "quoi";
+      var b = document.createElement("b"); b.textContent = nom + " · " + plat;
+      var code = document.createElement("code"); code.textContent = url;
+      q.appendChild(b); q.appendChild(code);
+      var bt = document.createElement("button"); bt.className = "btn"; bt.type = "button";
+      bt.textContent = "Tester";
+      bt.addEventListener("click", function(){ essayer(url); });
+      l.appendChild(q); l.appendChild(bt); c.appendChild(l);
+      var et = resultats[url];
+      if(et){
+        var p = document.createElement("div");
+        p.className = "etat " + et; p.textContent = LIB[et];
+        c.appendChild(p);
+      }
+      $(zone).appendChild(c);
+    });
+    bilan();
+  }
+
+  function bilan(){
+    var faits = ESSAIS.filter(function(e){ return resultats[e[2]] &&
+                                                  resultats[e[2]] !== "attente"; });
+    if(!faits.length){ $("bilan").textContent = "Rien encore."; return; }
+    var t = "Essai des liens — " + navigator.userAgent + "\n\n";
+    faits.forEach(function(e){
+      t += (resultats[e[2]] === "ouvert" ? "[OUVERT] " : "[rien]   ") + e[1] + "  " + e[2] + "\n";
+    });
+    $("bilan").textContent = t;
+  }
+
+  $("copier").addEventListener("click", function(){
+    var t = $("bilan").textContent, b = this;
+    var fini = function(ok){ b.textContent = ok ? "Copié" : "Copie impossible";
+      setTimeout(function(){ b.textContent = "Copier le résultat"; }, 1600); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){ fini(true); },
+                                           function(){ fini(false); });
+    } else { fini(false); }
+  });
+
+  rendre();
+})();
+</script>
+</body>
+</html>
