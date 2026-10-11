@@ -60,8 +60,10 @@ pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
     ici : la ligne passera toute seule en « a ouvert quelque chose ». Rien à noter.</p>
 
   <p class="eyebrow">D'abord les témoins</p>
-  <p class="sub" style="margin-bottom:10px">Ces deux-là doivent marcher. S'ils échouent,
-    c'est la détection qui est cassée et le reste de la page ne veut rien dire.</p>
+  <p class="sub" style="margin-bottom:10px">Les deux premiers <b>doivent</b> ouvrir quelque
+    chose. Les deux suivants ne doivent <b>rien</b> ouvrir — ce sont des schémas qui
+    n'existent pas. Si l'un des quatre se trompe, la détection ment et le reste de la
+    page ne veut rien dire.</p>
   <div id="temoins"></div>
 
   <p class="eyebrow">Wave</p>
@@ -85,8 +87,10 @@ pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
 
   // Chaque essai : un libellé, l'URL, et la plateforme où il a un sens.
   var ESSAIS = [
-    ["temoins", "Fiche Wave sur le Play Store", "https://play.google.com/store/apps/details?id=com.wave.personal", "Android"],
-    ["temoins", "Fiche Wave sur l'App Store", "https://apps.apple.com/sn/app/id1523884528", "iPhone"],
+    ["temoins", "Doit ouvrir · fiche Wave sur le Play Store", "https://play.google.com/store/apps/details?id=com.wave.personal", "Android"],
+    ["temoins", "Doit ouvrir · fiche Wave sur l'App Store", "https://apps.apple.com/sn/app/id1523884528", "iPhone"],
+    ["temoins", "Ne doit RIEN ouvrir · schéma inventé", "lekkbi-rien-du-tout://", "les deux"],
+    ["temoins", "Ne doit RIEN ouvrir · autre schéma inventé", "zzzz-nexistepas://ouvrir", "les deux"],
 
     ["wave", "Schéma nu", "wave://", "les deux"],
     ["wave", "Schéma avec destinataire et montant", "wave://send?to=221781587748&amount=3000", "les deux"],
@@ -103,38 +107,50 @@ pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
 
   var resultats = {};
   try {
-    resultats = JSON.parse(sessionStorage.getItem("essai_liens") || "{}");
+    resultats = JSON.parse(sessionStorage.getItem("essai_liens_v2") || "{}");
   } catch(e){ resultats = {}; }
 
   function garder(){
-    try { sessionStorage.setItem("essai_liens", JSON.stringify(resultats)); } catch(e){}
+    try { sessionStorage.setItem("essai_liens_v2", JSON.stringify(resultats)); } catch(e){}
   }
 
   var enCours = null, depart = 0, minuteur = null;
 
-  // La seule mesure fiable sans rien demander : si la page passe en arrière-plan
-  // dans la seconde qui suit le tapotement, c'est que quelque chose s'est ouvert.
-  function partiAilleurs(){
-    if(!enCours) return;
+  // On ne regarde QUE la visibilité, jamais le focus. Une alerte système — « adresse
+  // non valide » quand le schéma n'existe pas — fait perdre le focus à la page sans
+  // la cacher. En écoutant « blur », on comptait ces alertes comme des réussites et
+  // tout ressortait positif. La page cachée, elle, ne ment pas : soit une autre
+  // application est passée devant, soit on a quitté la page.
+  document.addEventListener("visibilitychange", function(){
+    if(!document.hidden || !enCours) return;
     if(Date.now() - depart < 2500){
-      resultats[enCours] = "ouvert";
-      garder(); rendre();
+      resultats[enCours] = "ouvert"; garder(); rendre();
     }
     enCours = null; clearTimeout(minuteur);
-  }
-  document.addEventListener("visibilitychange", function(){
-    if(document.hidden) partiAilleurs();
   });
-  window.addEventListener("pagehide", partiAilleurs);
-  window.addEventListener("blur", partiAilleurs);
+
+  // Un lien https quitte vraiment la page : au retour elle se recharge et
+  // « enCours » est perdu. On laisse donc une trace horodatée avant de partir.
+  try {
+    var att = JSON.parse(sessionStorage.getItem("essai_attente") || "null");
+    if(att && Date.now() - att.t < 120000 && resultats[att.url] === "attente"){
+      resultats[att.url] = "ouvert"; garder();
+    } else if(att && resultats[att.url] === "attente"){
+      resultats[att.url] = "rien"; garder();
+    }
+    sessionStorage.removeItem("essai_attente");
+  } catch(e){}
 
   function essayer(url){
     enCours = url; depart = Date.now();
     resultats[url] = "attente"; garder(); rendre();
+    try { sessionStorage.setItem("essai_attente",
+            JSON.stringify({url:url, t:Date.now()})); } catch(e){}
     clearTimeout(minuteur);
     minuteur = setTimeout(function(){
       if(resultats[url] === "attente"){ resultats[url] = "rien"; garder(); rendre(); }
       enCours = null;
+      try { sessionStorage.removeItem("essai_attente"); } catch(e){}
     }, 2600);
     try { window.location.href = url; }
     catch(e){ resultats[url] = "rien"; garder(); rendre(); }
@@ -172,7 +188,13 @@ pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
     var faits = ESSAIS.filter(function(e){ return resultats[e[2]] &&
                                                   resultats[e[2]] !== "attente"; });
     if(!faits.length){ $("bilan").textContent = "Rien encore."; return; }
-    var t = "Essai des liens — " + navigator.userAgent + "\n\n";
+    var faux = ["lekkbi-rien-du-tout://", "zzzz-nexistepas://ouvrir"]
+                 .filter(function(u){ return resultats[u] === "ouvert"; });
+    var tous = ESSAIS.every(function(e){ return resultats[e[2]]; });
+    var t = "Essai des liens — " + navigator.userAgent + "\n";
+    if(faux.length) t += "\n*** MESURE INVALIDE : un schéma inventé a été compté comme ouvert ***\n";
+    else if(tous)   t += "\nTémoins négatifs corrects : la mesure est fiable.\n";
+    t += "\n";
     faits.forEach(function(e){
       t += (resultats[e[2]] === "ouvert" ? "[OUVERT] " : "[rien]   ") + e[1] + "  " + e[2] + "\n";
     });
