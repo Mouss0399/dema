@@ -17,6 +17,13 @@
 <meta property="og:image:alt" content="Lekk bi — le déjeuner au bureau">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="polices/karla.woff2" as="font" type="font/woff2" crossorigin>
+<!-- La base est sur un autre domaine : sans cette ligne, le navigateur
+     n'ouvre la connexion (DNS, TCP, TLS — quatre allers-retours) qu'au
+     moment où le script la réclame, soit après avoir lu toute la page.
+     Avec, il la prépare pendant qu'il télécharge le reste. « crossorigin »
+     est obligatoire : les appels partent en CORS, et sans lui le
+     navigateur ouvrirait une seconde connexion pour rien. -->
+<link rel="preconnect" href="https://fiqrfrcsgxqvqjgvzasr.supabase.co" crossorigin>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="marque/icone-192.png">
 <link rel="apple-touch-icon" href="marque/icone-180.png">
@@ -526,6 +533,20 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
     e.textContent = m; e.hidden = false; window.scrollTo(0,0);
   }
 
+  // Un bouton qui ne bouge pas sous le doigt passe pour un bouton cassé.
+  // L'aller-retour vers la base tient en une centaine de millisecondes sur
+  // une bonne ligne ; en données mobiles dans un immeuble il monte vite à une
+  // demi-seconde. Assez pour qu'on retape, pas assez pour qu'on comprenne —
+  // et comme le second appui est ignoré en silence, l'application a l'air
+  // morte au lieu d'avoir l'air occupée. Le bouton répond donc tout de suite,
+  // et redevient lui-même quoi qu'il arrive, succès comme erreur.
+  function occupe(id, mot){
+    var b = $(id); if(!b) return function(){};
+    var txt = b.textContent, off = b.disabled;
+    b.disabled = true; b.textContent = mot;
+    return function(){ b.textContent = txt; b.disabled = off; };
+  }
+
   function rpc(fn, args){
     return fetch(CONFIG.url + "/rest/v1/rpc/" + fn, {
       method: "POST",
@@ -783,6 +804,9 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
       toast("Écris ton numéro, comme 77 123 45 67"); $("tel").focus(); return;
     }
     if(enCours) return; enCours = true; erreur(null);
+    // deux allers-retours s'enchaînent ici : l'inscription, puis le menu
+    // rafraîchi. Le bouton reste occupé jusqu'au bout des deux.
+    var fini = occupe("go-inscrire", "Un instant…");
     rpc("fn_inscrire", { p_slug: CONFIG.site, p_nom: v, p_tel: t, p_appareil: APPAREIL })
       .then(function(p){
         MON_NOM = p.nom;
@@ -794,7 +818,7 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
         return demarrer();
       })
       .catch(function(e){ erreur(e.message); })
-      .then(function(){ enCours = false; });
+      .then(function(){ enCours = false; fini(); });
   }
   $("go-inscrire").addEventListener("click", inscrire);
 
@@ -1025,6 +1049,7 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
 
   $("go-commander").addEventListener("click", function(){
     if(enCours) return; enCours = true; erreur(null);
+    var fini = occupe("go-commander", "On enregistre…");
     var pleins = paniers.filter(function(p){ return !panierVide(p); });
     var charge = pleins.map(function(p){
       var lignes = [];
@@ -1048,18 +1073,23 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
         ecran("ok");
       })
       .catch(function(e){ erreur(e.message); ecran("order"); })
-      .then(function(){ enCours = false; });
+      .then(function(){ enCours = false; fini(); });
   });
 
   /* ---------- règlement ---------- */
-  function ouvrirPaiement(){
+  function ouvrirPaiement(ev){
     erreur(null);
+    // trois boutons mènent ici ; c'est celui qu'on vient de toucher qui doit
+    // répondre, pas un autre
+    var fini = occupe((ev && ev.currentTarget && ev.currentTarget.id) || "go-regler-now",
+                      "Un instant…");
     rpc("fn_a_regler", { p_slug: CONFIG.site, p_appareil: APPAREIL }).then(function(list){
+      fini();
       if(!list || !list.length){ toast("Rien à régler aujourd'hui"); return; }
       // on pré-coche ma commande ET celles que j'ai passées pour d'autres
       aRegler = list.filter(function(c){ return c.moi || c.par_moi; }).map(function(c){ return c.id; });
       rendreSettle(list); rendreMoyens(); ecran("pay");
-    }).catch(function(e){ erreur(e.message); });
+    }).catch(function(e){ fini(); erreur(e.message); });
   }
   $("go-regler-now").addEventListener("click", ouvrirPaiement);
   $("go-payer").addEventListener("click", ouvrirPaiement);
