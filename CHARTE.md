@@ -55,6 +55,14 @@ En dessous de 28 px l'onde s'aplatit : il n'y a plus la place.
 **Le contour s'épaissit quand le signe rétrécit** : 0,085 du diamètre au-dessus
 de 48 px, 0,105 entre 28 et 48, 0,135 en dessous.
 
+**Sa couleur dépend aussi de la taille.** L'anneau est le contenant, le liquide
+est le contenu : il faut pouvoir les distinguer. Au-dessus de 48 px, les peindre
+tous deux en accent les fond en une seule masse, et il ne reste à lire qu'une
+échancrure claire — l'anneau repasse donc au texte tertiaire. En dessous de
+48 px c'est l'inverse : il n'y a plus assez de liquide pour porter la couleur à
+lui seul, et l'anneau prend l'accent dès que le disque est entamé. Dans les deux
+cas c'est le liquide qui porte l'information ; l'anneau ne fait que la cadrer.
+
 **Taille minimale : 16 px.** En dessous, les trois états ne se distinguent plus.
 
 Tout est tracé en suréchantillonnage ×8 puis réduit en Lanczos. Un cercle tracé
@@ -67,6 +75,20 @@ déjà rentrée, avant même qu'on lise les montants. C'est le seul endroit du
 produit où le signe est **regardé** plutôt que parcouru — et donc le seul où il
 est assez grand pour que l'onde existe. Partout ailleurs il fait 16 à 20 px,
 où la charte veut une surface droite.
+
+### Le mouvement
+
+**Le signe est la seule chose qui bouge, et seulement là où on le regarde.**
+Sur la vitrine, le disque monte une fois à l'arrivée — 1,15 s, et il s'arrête à
+la part réelle. C'est le geste que le produit décrit, montré au lieu d'être
+raconté. Rien d'autre sur la page n'a le droit de bouger : ni survol animé, ni
+apparition au défilement, ni compteur qui s'incrémente.
+
+Dans le produit, le signe ne bouge jamais : il porte un état, et un état qui
+s'anime se lit comme un chargement.
+
+`prefers-reduced-motion: reduce` supprime l'animation — le disque est alors à
+son niveau dès la première image. Désactiver veut dire immobile, pas invisible.
 
 ### Où il sert seul
 
@@ -228,7 +250,7 @@ SIL OFL — hébergée dans `polices/karla.woff2`, jamais chargée depuis un ser
 tiers. **Gabarito 700 ne sert qu'au logotype**, et le logotype est un tracé : la
 police n'est pas embarquée dans les pages.
 
-Échelle à six paliers, sans valeur intermédiaire :
+Échelle à six paliers pour l'interface, sans valeur intermédiaire :
 
 | px | Emploi |
 |---|---|
@@ -238,6 +260,13 @@ police n'est pas embarquée dans les pages.
 | 18 | noms de plats, titres de section |
 | 22 | titres d'écran |
 | 28 | totaux |
+| 40 | **titre de vitrine — cette page-là seulement** |
+
+Le septième palier n'appartient pas à l'interface. Sur la vitrine, quelqu'un
+découvre le produit sans contexte, sur son téléphone, en dix secondes : quand le
+plus gros corps disponible vaut un total, aucun titre ne peut dominer et la page
+se lit comme un paragraphe de conditions générales. 40 px ne sert qu'au titre de
+cette page. Il n'entre dans aucun écran du produit.
 
 Les champs de saisie ne descendent jamais sous 16 px : en dessous, Safari iOS
 zoome la page à chaque fois qu'on les touche. La règle qui l'impose doit rester

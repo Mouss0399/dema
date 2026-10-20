@@ -224,7 +224,7 @@ h1{font-size:22px} h2{font-size:18px}
   .annul:disabled{opacity:.5}
   code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;
     background:var(--surface-2);padding:2px 6px;border-radius:5px}
-  #acc-contact{text-decoration:none;text-align:center}
+  #acc-contact,#acc-contact2{text-decoration:none;text-align:center}
   /* `hidden` doit l'emporter : une règle de classe qui pose display (flex, block)
      bat l'attribut, et l'élément reste affiché alors qu'on le croit caché.
      C'est ce qui laissait un bandeau rose vide en haut du menu chaque matin,
@@ -268,9 +268,57 @@ body.vitrine .top{display:none}
    Quatre atouts separes par un filet, pas de puces — on reste dans la
    grammaire du reste du site.
    ------------------------------------------------------------------ */
-.atout + .atout{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.atout{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
 .atout .eyebrow{margin-bottom:5px}
 .note-perdu{margin:16px 2px 0;font-size:12px;color:var(--ink-3);line-height:1.5}
+
+/* ── La vitrine ───────────────────────────────────────────────────────────
+   Ici quelqu'un découvre le produit sans contexte, sur son téléphone, en dix
+   secondes. Les six paliers de l'interface n'y suffisent pas : quand le plus
+   gros corps disponible vaut un total, aucun titre ne peut dominer, et la
+   page se lit comme un paragraphe de conditions générales. D'où un septième
+   palier, réservé à cette page et à elle seule. */
+.vit-titre{font-size:40px;line-height:1.06;font-weight:800;letter-spacing:-.025em;
+  margin:4px 0 14px}
+.vit-sous{font-size:16px;color:var(--ink-2);line-height:1.5;margin:0 0 18px}
+.vit-note{font-size:12px;color:var(--ink-3);line-height:1.5;margin:9px 2px 0;text-align:center}
+
+/* Le registre : pas une carte de plus, des filets. C'est la grammaire de la
+   marque appliquée à ce qu'elle vend. */
+.registre{margin-top:28px;padding-top:18px;border-top:1.5px solid var(--line-strong)}
+.registre .ex{font-size:12px;letter-spacing:0;text-transform:none;color:var(--ink-3);
+  border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:6px;
+  font-weight:500}
+.reg-jauge{display:flex;align-items:center;gap:16px;margin:16px 0 20px}
+.reg-gros{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.reg-leg{font-size:14px;color:var(--ink-2);line-height:1.4;margin-top:4px}
+.reg-l{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:10px 0;border-top:1px solid var(--line)}
+.reg-l span{font-size:16px}
+.reg-l b{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.reg-pied{font-size:12px;color:var(--ink-3);line-height:1.5;margin:0;
+  padding-top:12px;border-top:1.5px solid var(--line-strong)}
+
+/* Le signe, en grand et au travail : il porte la part réellement rentrée,
+   exactement comme en tête de l'onglet « Encaissé ». Même géométrie — l'aire
+   du segment circulaire inversée, l'onde à 1,90 D — mais tracée une fois en
+   dur : la vitrine n'a aucune raison d'embarquer le constructeur. */
+.jv{width:92px;height:92px;flex:none;display:block}
+/* L'anneau est le contenant, le liquide est le contenu : à 92 px, peindre
+   les deux en accent les fond en une seule masse rouge et il ne reste à lire
+   qu'une échancrure claire. Au-dessus de 48 px l'anneau repasse donc au
+   tertiaire de la charte. En dessous c'est l'inverse qui est vrai — à 16 px
+   il n'y a pas assez de liquide pour porter la couleur à lui seul. */
+.jv .anneau{fill:none;stroke:var(--ink-3)}
+.jv .liquide{fill:var(--accent)}
+/* Il se remplit une fois, à l'arrivée, et s'arrête. C'est le geste de la
+   marque, et c'est la seule chose qui bouge sur la page. */
+@keyframes jv-monte{from{transform:translateY(57px)}to{transform:translateY(0)}}
+.jv .liquide{animation:jv-monte 1.15s cubic-bezier(.22,.61,.36,1) .35s both}
+@media (prefers-reduced-motion:reduce){ .jv .liquide{animation:none} }
+
+.atouts{margin-top:26px}
+.atouts .atout:first-child{border-top:none;margin-top:0;padding-top:0}
 
 /* ------------------------------------------------------------------
    Garde-fou iOS — doit rester le DERNIER bloc de cette feuille.
@@ -366,23 +414,44 @@ input,select,textarea{font-size:16px}
   <!-- adresse nue : ni erreur ni cul-de-sac -->
   <div id="s-accueil" hidden>
     <div class="vit-tete"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2733 845" role="img" aria-label="Lekk bi"><g transform="translate(40,793) scale(1,-1)"><path fill="var(--logo-ink,#241C18)" d="M189 -5Q152 -5 121.0 10.0Q90 25 71.0 56.5Q52 88 52 141V681H197V193Q197 156 210.5 145.5Q224 135 245 135V0Q235 -2 218.5 -3.5Q202 -5 189 -5ZM538 -9Q465 -9 409.5 22.0Q354 53 323.5 110.0Q293 167 293 244Q293 320 323.5 378.0Q354 436 409.5 468.5Q465 501 538 501Q613 501 668.0 467.0Q723 433 753.0 375.5Q783 318 783 246Q783 233 782.0 221.0Q781 209 780 202H407V306H668L651 263Q651 318 623.5 353.0Q596 388 539 388Q488 388 457.5 357.0Q427 326 427 275V220Q427 165 458.5 134.5Q490 104 546 104Q593 104 620.5 123.0Q648 142 667 170L766 115Q734 56 676.0 23.5Q618 -9 538 -9ZM957 246V265L1157 489H1321L1099 238L1095 286L1326 0H1156ZM856 681H1001V0H856ZM1469 246V265L1669 489H1833L1611 238L1607 286L1838 0H1668ZM1368 681H1513V0H1368Z"/><path fill="var(--logo-accent,#A3123C)" d="M2151 -12Q2087 -12 2039.0 19.5Q1991 51 1964.5 108.5Q1938 166 1938 245Q1938 328 1964.0 385.0Q1990 442 2037.5 471.5Q2085 501 2150 501Q2216 501 2267.0 468.5Q2318 436 2347.0 378.0Q2376 320 2376 245Q2376 170 2347.5 111.5Q2319 53 2268.5 20.5Q2218 -12 2151 -12ZM1880 0V681H2026V353H2017V125H2026L1989 0ZM2123 125Q2168 125 2197.5 158.5Q2227 192 2227 245Q2227 297 2197.5 330.5Q2168 364 2123 364Q2079 364 2049.0 330.5Q2019 297 2019 245Q2019 192 2049.0 158.5Q2079 125 2123 125ZM2599 0H2453V489H2599Z"/><circle fill="var(--logo-accent,#A3123C)" cx="2526.0" cy="652.8" r="99.8"/></g></svg></div>
-    <div class="card">
-      <p class="eyebrow">Pour les traiteurs</p>
-      <h1>Tout ton midi dans un seul écran</h1>
-      <p class="sub">Ton groupe WhatsApp ne change pas. Tes clients commandent comme avant —
-        mais au lieu de recompter des messages, tu ouvres une page et tout y est.</p>
-    </div>
+    <p class="eyebrow">Pour les traiteurs</p>
+    <h1 class="vit-titre">Tout ton midi dans un seul écran</h1>
+    <p class="vit-sous">Ton groupe WhatsApp ne change pas. Tes clients commandent comme
+      avant — mais au lieu de recompter des messages, tu ouvres une page et tout y est.</p>
+    <a class="btn" id="acc-contact" href="#" hidden>En parler sur WhatsApp</a>
+    <p class="vit-note" id="acc-note" hidden>Dix minutes. Si ça ne te fait rien gagner,
+      je te le dirai aussi.</p>
 
-    <div class="card">
+    <!-- Le registre. On ne décrit plus l'écran, on le montre — composé avec la
+         grammaire de la marque : des filets, des chiffres alignés, et le signe
+         qui porte l'état. Les chiffres sont un exemple, et le disent. -->
+    <section class="registre">
+      <p class="eyebrow">Ta journée, à la clôture <span class="ex">exemple</span></p>
+
+      <div class="reg-jauge">
+        <svg class="jv" viewBox="0 0 100 100" aria-hidden="true">
+          <defs><clipPath id="jv-disque"><circle cx="50" cy="50" r="42.10"/></clipPath></defs>
+          <circle class="anneau" cx="50" cy="50" r="45.75" stroke-width="8.5"/>
+          <g clip-path="url(#jv-disque)"><path class="liquide" d="M-10.00,41.41L-8.00,41.71L-6.00,41.95L-4.00,42.14L-2.00,42.27L0.00,42.33L2.00,42.34L4.00,42.28L6.00,42.18L8.00,42.02L10.00,41.83L12.00,41.60L14.00,41.34L16.00,41.06L18.00,40.78L20.00,40.49L22.00,40.21L24.00,39.94L26.00,39.69L28.00,39.47L30.00,39.27L32.00,39.11L34.00,38.98L36.00,38.88L38.00,38.80L40.00,38.76L42.00,38.74L44.00,38.74L46.00,38.74L48.00,38.76L50.00,38.77L52.00,38.77L54.00,38.76L56.00,38.73L58.00,38.67L60.00,38.58L62.00,38.46L64.00,38.30L66.00,38.10L68.00,37.87L70.00,37.61L72.00,37.31L74.00,36.99L76.00,36.66L78.00,36.31L80.00,35.96L82.00,35.61L84.00,35.28L86.00,34.97L88.00,34.70L90.00,34.46L92.00,34.27L94.00,34.13L96.00,34.05L98.00,34.04L100.00,34.08L102.00,34.19L104.00,34.36L106.00,34.58L108.00,34.87L110.00,35.20L110.00,200.00L-10.00,200.00Z"/></g>
+        </svg>
+        <div>
+          <div class="reg-gros">89 000 F</div>
+          <div class="reg-leg">rentrés sur 132 000 — le disque se remplit à mesure</div>
+        </div>
+      </div>
+
+      <div class="reg-l"><span>Thiéboudiène</span><b>27</b></div>
+      <div class="reg-l"><span>Lasagnes</span><b>12</b></div>
+      <div class="reg-l"><span>Jus bissap</span><b>9</b></div>
+      <p class="reg-pied">Et sous chaque plat, les noms — entreprise par entreprise,
+        sur ton téléphone.</p>
+    </section>
+
+    <section class="atouts">
       <div class="atout">
         <p class="eyebrow">Organisation</p>
         <p class="sub">Ton menu de la semaine s'écrit une fois. Chaque entreprise garde son
           lien, son heure de clôture, ses prix. Le lundi matin, tout est déjà en place.</p>
-      </div>
-      <div class="atout">
-        <p class="eyebrow">Visibilité</p>
-        <p class="sub">À la clôture : 27 thiéboudiène, 12 lasagnes, 9 jus. Et sous chaque plat,
-          les noms — entreprise par entreprise, sur ton téléphone.</p>
       </div>
       <div class="atout">
         <p class="eyebrow">Facilité</p>
@@ -395,14 +464,19 @@ input,select,textarea{font-size:16px}
         <p class="sub">Chaque règlement se coche quand il arrive. Tu vois qui a payé, qui a
           envoyé une capture, et qui te doit encore — <b>même si c'était un autre jour</b>.</p>
       </div>
-    </div>
+      <div class="atout">
+        <p class="eyebrow">Ce que ça ne fait pas</p>
+        <p class="sub">Lekk bi ne touche pas à l'argent. Tes clients payent sur <b>ton</b>
+          numéro, comme aujourd'hui. L'application note, elle n'encaisse pas.</p>
+      </div>
+    </section>
 
     <div class="card" id="acc-traiteur" hidden>
       <p class="eyebrow">On en parle ?</p>
       <p class="sub">Montre-moi comment tu fais aujourd'hui — ton menu, ton groupe, ta façon de
         compter. Je te dis en dix minutes si ça te fait gagner quelque chose. Si la réponse est
         non, je te le dirai aussi.</p>
-      <a class="btn" id="acc-contact" href="#">En parler sur WhatsApp</a>
+      <a class="btn ghost" id="acc-contact2" href="#">En parler sur WhatsApp</a>
     </div>
 
     <p class="note note-perdu">Tu travailles dans une entreprise servie et tu cherches à
@@ -581,9 +655,16 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
     document.title = (CONFIG.marque || "Commander") + " — le déjeuner au bureau";
     var num = String(CONFIG.contact || "").replace(/\D/g,"");
     if(num){
+      // Deux entrées pour la même conversation : une tout de suite, sous le
+      // titre, pour celui qui a déjà compris ; une au bout de l'argumentaire,
+      // pour celui qui avait besoin de lire. Un seul des deux porte l'aplat
+      // d'accent — la charte n'en autorise qu'un par écran.
+      var lien = "https://wa.me/" + num + "?text=" + encodeURIComponent(
+        "Bonjour, je suis traiteur et je voudrais voir ce que Lekk bi donnerait chez moi.");
+      ["acc-contact", "acc-contact2"].forEach(function(id){ $(id).href = lien; });
+      $("acc-contact").hidden = false;
+      $("acc-note").hidden = false;
       $("acc-traiteur").hidden = false;
-      $("acc-contact").href = "https://wa.me/" + num + "?text="
-        + encodeURIComponent("Bonjour, je suis traiteur et je voudrais voir ce que Lekk bi donnerait chez moi.");
     }
     $("acc-suivi").addEventListener("click", function(){ location.href = "suivi.html"; });
     ecran("accueil");

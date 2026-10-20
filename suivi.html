@@ -123,6 +123,11 @@ h1{font-size:22px} h2{font-size:18px}
 .jauge .anneau{fill:none;stroke:var(--ink-3)}
 .jauge .liquide{fill:var(--accent)}
 .jauge.entame .anneau{stroke:var(--accent)}
+/* Sauf en grand : à 92 px, anneau et liquide tous deux en accent se fondent
+   en une seule masse, et le disque ne se lit plus comme une jauge. Le
+   contenant repasse au tertiaire ; le liquide garde l'accent, qui reste
+   l'information. */
+.jauge.grande.entame .anneau{stroke:var(--ink-3)}
 
 /* Les noms sous chaque plat. Le vert disait « réglé » à la place du signe ;
    c'est la jauge qui le dit maintenant, et la pastille redevient neutre. */
@@ -501,7 +506,8 @@ var CONFIG = {
     var s = document.createElementNS(NS, "svg");
     s.setAttribute("viewBox", "0 0 100 100");
     s.setAttribute("aria-hidden", "true");
-    s.setAttribute("class", "jauge" + (niv > 0 ? " entame" : ""));
+    s.setAttribute("class", "jauge" + (niv > 0 ? " entame" : "")
+                            + (taille >= 48 ? " grande" : ""));
     s.style.width = s.style.height = taille + "px";
 
     var an = document.createElementNS(NS, "circle");
