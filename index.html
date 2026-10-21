@@ -77,7 +77,6 @@ body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:
    net a toute taille, et il prend les couleurs du theme tout seul.
    Le point du i est le signe de Lekk bi — plein au repos.
    ------------------------------------------------------------------ */
-.vit-tete{width:138px;margin:2px 0 18px}
 .logo{display:block;height:auto;width:100%;
   --logo-ink:var(--ink);--logo-accent:var(--accent)}
 .when{font-size:12px;color:var(--ink-3);margin-top:2px}
@@ -224,8 +223,7 @@ h1{font-size:22px} h2{font-size:18px}
   .annul:disabled{opacity:.5}
   code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;
     background:var(--surface-2);padding:2px 6px;border-radius:5px}
-  #acc-contact,#acc-contact2{text-decoration:none;text-align:center}
-  /* `hidden` doit l'emporter : une règle de classe qui pose display (flex, block)
+    /* `hidden` doit l'emporter : une règle de classe qui pose display (flex, block)
      bat l'attribut, et l'élément reste affiché alors qu'on le croit caché.
      C'est ce qui laissait un bandeau rose vide en haut du menu chaque matin,
      et le bouton « Changer ma commande » sur une commande déjà réglée. */
@@ -257,10 +255,8 @@ h1{font-size:22px} h2{font-size:18px}
 .signature{margin:24px 0 4px;text-align:center;font-size:12px;color:var(--ink-3)}
 .signature a{color:var(--ink-2);font-weight:600;text-decoration:none;
   border-bottom:1px solid var(--line-strong)}
-body.vitrine .signature{display:none}
 /* Sur la vitrine, l'en-tete est le logotype lui-meme : la barre du haut
    repeterait le nom juste au-dessus. */
-body.vitrine .top{display:none}
 
 /* ------------------------------------------------------------------
    La vitrine. Elle s'adresse a un traiteur, pas a un employe : celui-ci
@@ -268,9 +264,6 @@ body.vitrine .top{display:none}
    Quatre atouts separes par un filet, pas de puces — on reste dans la
    grammaire du reste du site.
    ------------------------------------------------------------------ */
-.atout{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
-.atout .eyebrow{margin-bottom:5px}
-.note-perdu{margin:16px 2px 0;font-size:12px;color:var(--ink-3);line-height:1.5}
 /* La barre de démonstration. Elle doit se voir sans voler la vedette à
    l'écran qu'elle présente : un filet d'accent, pas un aplat — l'aplat de la
    page est déjà pris par son bouton principal. */
@@ -283,112 +276,6 @@ body.vitrine .top{display:none}
   text-decoration:none;border:1.5px solid var(--accent);border-radius:8px;
   padding:7px 12px;white-space:nowrap}
 
-/* ── La vitrine ───────────────────────────────────────────────────────────
-   Ici quelqu'un découvre le produit sans contexte, sur son téléphone, en dix
-   secondes. Les six paliers de l'interface n'y suffisent pas : quand le plus
-   gros corps disponible vaut un total, aucun titre ne peut dominer, et la
-   page se lit comme un paragraphe de conditions générales. D'où un septième
-   palier, réservé à cette page et à elle seule. */
-/* La barre du haut : le mot, et deux portes. Pas de menu déroulant — il n'y
-   a pas assez de pages pour ça, et un menu qui cache deux liens ment sur la
-   taille du site. */
-.vit-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  flex-wrap:wrap;padding:16px 0 14px;border-bottom:1px solid var(--line)}
-.vit-nav .vit-tete{margin:0;width:112px}
-.vit-liens{display:flex;align-items:center;gap:6px}
-.vit-liens a{font-size:14px;color:var(--ink-2);text-decoration:none;padding:8px 8px}
-.vit-liens a.vit-demo{color:var(--accent);font-weight:600;border:1.5px solid var(--accent);
-  border-radius:8px;padding:8px 13px}
-
-.vit-hero{padding-top:26px}
-.vit-titre{font-size:40px;line-height:1.06;font-weight:800;letter-spacing:-.025em;
-  margin:4px 0 14px}
-.vit-sous{font-size:16px;color:var(--ink-2);line-height:1.5;margin:0 0 18px}
-.vit-note{font-size:12px;color:var(--ink-3);line-height:1.5;margin:9px 2px 0;text-align:center}
-.vit-boutons{display:flex;flex-direction:column;gap:9px;margin-top:18px}
-.vit-boutons .btn{margin-top:0;text-decoration:none;text-align:center}
-
-/* Trois faits, et pas trois icônes : la charte n'a pas d'iconographie et n'en
-   veut pas. Ce qui sépare, c'est le filet. */
-.vit-faits{list-style:none;margin:22px 0 0;padding:14px 0 0;border-top:1px solid var(--line)}
-.vit-faits li{padding:9px 0}
-.vit-faits li + li{border-top:1px solid var(--line)}
-.vit-faits b{display:block;font-size:14px}
-.vit-faits span{display:block;font-size:12px;color:var(--ink-3);margin-top:2px}
-
-/* L'écran, tenu par un filet. Pas d'ombre portée, pas de fausse fenêtre de
-   navigateur : c'est une capture, pas une mise en scène. */
-.vit-ecran{margin:26px 0 0}
-.vit-ecran img{display:block;width:100%;height:auto;border:1px solid var(--line-strong);
-  border-radius:12px;background:var(--surface)}
-.vit-ecran figcaption{font-size:12px;color:var(--ink-3);margin-top:10px;text-align:center}
-.vit-ecran a{color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
-
-/* Les trois étapes. Le numéro est cerclé d'un filet, pas d'une pastille
-   pleine — l'aplat d'accent de la page est déjà pris. */
-.etapes{margin-top:28px;padding-top:18px;border-top:1.5px solid var(--line-strong)}
-.etapes ol{list-style:none;counter-reset:e;margin:12px 0 0;padding:0}
-.etapes li{counter-increment:e;position:relative;padding:14px 0 14px 42px}
-.etapes li + li{border-top:1px solid var(--line)}
-.etapes li::before{content:counter(e);position:absolute;left:0;top:15px;width:28px;height:28px;
-  border-radius:50%;border:1.5px solid var(--line-strong);display:grid;place-items:center;
-  font-size:14px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
-.etapes b{display:block;font-size:18px;margin-bottom:4px}
-.etapes span{display:block;font-size:14px;color:var(--ink-2);line-height:1.5}
-
-/* Deux colonnes dès qu'il y a la place. Le titre ne grossit pas : 40 px est
-   le palier de vitrine, il n'y en a pas d'autre. */
-@media (min-width:880px){
-  body.vitrine .wrap{max-width:1000px}
-  .vit-hero{display:grid;grid-template-columns:1fr 360px;gap:52px;align-items:start;
-    padding-top:44px}
-  .vit-ecran{margin:0}
-  .vit-boutons{flex-direction:row}
-  .vit-boutons .btn{width:auto;padding-inline:24px}
-  .vit-note{text-align:left}
-  /* Les trois étapes prennent toute la largeur : serrées à 680 px, les
-     colonnes se cassent en mots isolés. */
-  .registre,.atouts,#acc-traiteur,.note-perdu,#acc-suivi{max-width:680px}
-  .etapes ol{display:grid;grid-template-columns:repeat(3,1fr);gap:0 26px}
-  .etapes li + li{border-top:none}
-}
-
-/* Le registre : pas une carte de plus, des filets. C'est la grammaire de la
-   marque appliquée à ce qu'elle vend. */
-.registre{margin-top:28px;padding-top:18px;border-top:1.5px solid var(--line-strong)}
-.registre .ex{font-size:12px;letter-spacing:0;text-transform:none;color:var(--ink-3);
-  border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:6px;
-  font-weight:500}
-.reg-jauge{display:flex;align-items:center;gap:16px;margin:16px 0 20px}
-.reg-gros{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
-.reg-leg{font-size:14px;color:var(--ink-2);line-height:1.4;margin-top:4px}
-.reg-l{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
-  padding:10px 0;border-top:1px solid var(--line)}
-.reg-l span{font-size:16px}
-.reg-l b{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
-.reg-pied{font-size:12px;color:var(--ink-3);line-height:1.5;margin:0;
-  padding-top:12px;border-top:1.5px solid var(--line-strong)}
-
-/* Le signe, en grand et au travail : il porte la part réellement rentrée,
-   exactement comme en tête de l'onglet « Encaissé ». Même géométrie — l'aire
-   du segment circulaire inversée, l'onde à 1,90 D — mais tracée une fois en
-   dur : la vitrine n'a aucune raison d'embarquer le constructeur. */
-.jv{width:92px;height:92px;flex:none;display:block}
-/* L'anneau est le contenant, le liquide est le contenu : à 92 px, peindre
-   les deux en accent les fond en une seule masse rouge et il ne reste à lire
-   qu'une échancrure claire. Au-dessus de 48 px l'anneau repasse donc au
-   tertiaire de la charte. En dessous c'est l'inverse qui est vrai — à 16 px
-   il n'y a pas assez de liquide pour porter la couleur à lui seul. */
-.jv .anneau{fill:none;stroke:var(--ink-3)}
-.jv .liquide{fill:var(--accent)}
-/* Il se remplit une fois, à l'arrivée, et s'arrête. C'est le geste de la
-   marque, et c'est la seule chose qui bouge sur la page. */
-@keyframes jv-monte{from{transform:translateY(57px)}to{transform:translateY(0)}}
-.jv .liquide{animation:jv-monte 1.15s cubic-bezier(.22,.61,.36,1) .35s both}
-@media (prefers-reduced-motion:reduce){ .jv .liquide{animation:none} }
-
-.atouts{margin-top:26px}
-.atouts .atout:first-child{border-top:none;margin-top:0;padding-top:0}
 
 /* ------------------------------------------------------------------
    Garde-fou iOS — doit rester le DERNIER bloc de cette feuille.
@@ -487,114 +374,6 @@ input,select,textarea{font-size:16px}
   </div>
 
   <!-- adresse nue : ni erreur ni cul-de-sac -->
-  <div id="s-accueil" hidden>
-    <nav class="vit-nav">
-      <div class="vit-tete"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2733 845" role="img" aria-label="Lekk bi"><g transform="translate(40,793) scale(1,-1)"><path fill="var(--logo-ink,#241C18)" d="M189 -5Q152 -5 121.0 10.0Q90 25 71.0 56.5Q52 88 52 141V681H197V193Q197 156 210.5 145.5Q224 135 245 135V0Q235 -2 218.5 -3.5Q202 -5 189 -5ZM538 -9Q465 -9 409.5 22.0Q354 53 323.5 110.0Q293 167 293 244Q293 320 323.5 378.0Q354 436 409.5 468.5Q465 501 538 501Q613 501 668.0 467.0Q723 433 753.0 375.5Q783 318 783 246Q783 233 782.0 221.0Q781 209 780 202H407V306H668L651 263Q651 318 623.5 353.0Q596 388 539 388Q488 388 457.5 357.0Q427 326 427 275V220Q427 165 458.5 134.5Q490 104 546 104Q593 104 620.5 123.0Q648 142 667 170L766 115Q734 56 676.0 23.5Q618 -9 538 -9ZM957 246V265L1157 489H1321L1099 238L1095 286L1326 0H1156ZM856 681H1001V0H856ZM1469 246V265L1669 489H1833L1611 238L1607 286L1838 0H1668ZM1368 681H1513V0H1368Z"/><path fill="var(--logo-accent,#A3123C)" d="M2151 -12Q2087 -12 2039.0 19.5Q1991 51 1964.5 108.5Q1938 166 1938 245Q1938 328 1964.0 385.0Q1990 442 2037.5 471.5Q2085 501 2150 501Q2216 501 2267.0 468.5Q2318 436 2347.0 378.0Q2376 320 2376 245Q2376 170 2347.5 111.5Q2319 53 2268.5 20.5Q2218 -12 2151 -12ZM1880 0V681H2026V353H2017V125H2026L1989 0ZM2123 125Q2168 125 2197.5 158.5Q2227 192 2227 245Q2227 297 2197.5 330.5Q2168 364 2123 364Q2079 364 2049.0 330.5Q2019 297 2019 245Q2019 192 2049.0 158.5Q2079 125 2123 125ZM2599 0H2453V489H2599Z"/><circle fill="var(--logo-accent,#A3123C)" cx="2526.0" cy="652.8" r="99.8"/></g></svg></div>
-      <div class="vit-liens">
-        <a href="#marche">Comment ça marche</a>
-        <a class="vit-demo" href="suivi.html?demo">Voir la démo</a>
-      </div>
-    </nav>
-    <section class="vit-hero">
-      <div class="vit-dit">
-        <p class="eyebrow">Pour les traiteurs</p>
-        <h1 class="vit-titre">Tout ton midi dans un seul écran</h1>
-        <p class="vit-sous">Ton groupe WhatsApp ne change pas. Tes clients commandent comme
-          avant — mais au lieu de recompter des messages, tu ouvres une page et tout y est.</p>
-        <div class="vit-boutons">
-          <a class="btn" href="suivi.html?demo">Voir la démo</a>
-          <a class="btn ghost" id="acc-contact" href="#" hidden>En parler sur WhatsApp</a>
-        </div>
-        <p class="vit-note" id="acc-note" hidden>La démo est une journée d'exemple :
-          tu peux tout toucher, rien n'est enregistré.</p>
-
-        <ul class="vit-faits">
-          <li><b>Rien à installer</b><span>Une page web. Ni application, ni mise à jour.</span></li>
-          <li><b>Prêt en dix minutes</b><span>Ton menu, tes entreprises, tes horaires.</span></li>
-          <li><b>Pas de compte pour tes clients</b><span>Ils cliquent sur le lien du groupe.</span></li>
-        </ul>
-      </div>
-
-      <!-- L'écran réel, capturé dans la démonstration. Encadré d'un filet et
-           non posé sur une ombre : rien ne flotte, ici non plus. -->
-      <figure class="vit-ecran">
-        <img src="vitrine/ecran-traiteur.png" width="760" height="1440" loading="lazy"
-             alt="L'écran du traiteur : pour chaque plat, la quantité à préparer et, sous
-                  chaque plat, les noms — avec un disque qui dit qui a déjà réglé.">
-        <figcaption>Ce que tu vois à la clôture. <a href="suivi.html?demo">Ouvre-le →</a></figcaption>
-      </figure>
-    </section>
-
-    <!-- Le registre. On ne décrit plus l'écran, on le montre — composé avec la
-         grammaire de la marque : des filets, des chiffres alignés, et le signe
-         qui porte l'état. Les chiffres sont un exemple, et le disent. -->
-    <section class="registre">
-      <p class="eyebrow">Et côté argent, le même jour <span class="ex">exemple</span></p>
-
-      <div class="reg-jauge">
-        <svg class="jv" viewBox="0 0 100 100" aria-hidden="true">
-          <defs><clipPath id="jv-disque"><circle cx="50" cy="50" r="42.10"/></clipPath></defs>
-          <circle class="anneau" cx="50" cy="50" r="45.75" stroke-width="8.5"/>
-          <g clip-path="url(#jv-disque)"><path class="liquide" d="M-10.00,41.41L-8.00,41.71L-6.00,41.95L-4.00,42.14L-2.00,42.27L0.00,42.33L2.00,42.34L4.00,42.28L6.00,42.18L8.00,42.02L10.00,41.83L12.00,41.60L14.00,41.34L16.00,41.06L18.00,40.78L20.00,40.49L22.00,40.21L24.00,39.94L26.00,39.69L28.00,39.47L30.00,39.27L32.00,39.11L34.00,38.98L36.00,38.88L38.00,38.80L40.00,38.76L42.00,38.74L44.00,38.74L46.00,38.74L48.00,38.76L50.00,38.77L52.00,38.77L54.00,38.76L56.00,38.73L58.00,38.67L60.00,38.58L62.00,38.46L64.00,38.30L66.00,38.10L68.00,37.87L70.00,37.61L72.00,37.31L74.00,36.99L76.00,36.66L78.00,36.31L80.00,35.96L82.00,35.61L84.00,35.28L86.00,34.97L88.00,34.70L90.00,34.46L92.00,34.27L94.00,34.13L96.00,34.05L98.00,34.04L100.00,34.08L102.00,34.19L104.00,34.36L106.00,34.58L108.00,34.87L110.00,35.20L110.00,200.00L-10.00,200.00Z"/></g>
-        </svg>
-        <div>
-          <div class="reg-gros">89 000 F</div>
-          <div class="reg-leg">rentrés sur 132 000 — le disque se remplit à mesure</div>
-        </div>
-      </div>
-
-      <div class="reg-l"><span>Thiéboudiène</span><b>27</b></div>
-      <div class="reg-l"><span>Lasagnes</span><b>12</b></div>
-      <div class="reg-l"><span>Jus bissap</span><b>9</b></div>
-      <p class="reg-pied">Chaque règlement se coche quand il arrive. Tu vois qui a payé,
-        qui te doit encore — <b>même si c'était un autre jour</b>.</p>
-    </section>
-
-    <section class="etapes" id="marche">
-      <p class="eyebrow">Comment ça marche</p>
-      <ol>
-        <li><b>Tu écris ton menu</b><span>Une fois pour la semaine. Chaque entreprise garde
-          son lien, son heure de clôture, ses prix.</span></li>
-        <li><b>Tes clients commandent</b><span>Ils cliquent sur le lien dans le groupe,
-          choisissent, c'est fini. Ceux qui préfèrent t'appeler, tu les ajoutes toi-même.</span></li>
-        <li><b>Tu prépares, et tu suis</b><span>Les quantités par plat et par entreprise,
-          les noms dessous, et qui a réglé. Sur ton téléphone.</span></li>
-      </ol>
-    </section>
-
-    <section class="atouts">
-      <div class="atout">
-        <p class="eyebrow">Ce que ça remplace</p>
-        <p class="sub">Le sondage WhatsApp qu'on recompte à la main, le carnet où on note
-          qui doit encore, et les messages « c'est bien toi qui as payé mardi ? ».</p>
-      </div>
-      <div class="atout">
-        <p class="eyebrow">Ce que ça ne fait pas</p>
-        <p class="sub">Lekk bi ne touche pas à l'argent. Tes clients payent sur <b>ton</b>
-          numéro, comme aujourd'hui. L'application note, elle n'encaisse pas.</p>
-      </div>
-      <div class="atout">
-        <p class="eyebrow">Ce que ça coûte</p>
-        <p class="sub">Un abonnement, payé par toi — jamais par tes clients. Le prix n'est
-          pas encore fixé : parlons-en, c'est aussi comme ça qu'il se fixera.</p>
-      </div>
-    </section>
-
-    <div class="card" id="acc-traiteur" hidden>
-      <p class="eyebrow">On en parle ?</p>
-      <p class="sub">Montre-moi comment tu fais aujourd'hui — ton menu, ton groupe, ta façon de
-        compter. Je te dis en dix minutes si ça te fait gagner quelque chose. Si la réponse est
-        non, je te le dirai aussi.</p>
-      <a class="btn ghost" id="acc-contact2" href="#">En parler sur WhatsApp</a>
-    </div>
-
-    <p class="note note-perdu">Tu travailles dans une entreprise servie et tu cherches à
-      commander ? Il te faut le lien de <b>ton</b> entreprise — il ressemble à
-      <code>…/?s=yas</code> et se trouve dans le groupe WhatsApp où passe le menu.
-      Pour voir à quoi ça ressemble, <a href="?s=demo">la démonstration est par ici</a>.</p>
-
-    <button class="btn ghost sm" id="acc-suivi">J'ai un compte traiteur</button>
-  </div>
 
 
   <!-- règlement -->
@@ -664,8 +443,10 @@ var CONFIG = {
 
   // Ce que voit quelqu'un qui tape l'adresse nue, sans lien d'entreprise.
   marque:  "Lekk bi",            // le nom du service — remplace par le tien
-  contact: "221781587748"        // numéro WhatsApp affiché aux traiteurs.
-                                 // Laissé vide, le bouton « je suis traiteur » n'apparaît pas.
+  contact: "221781587748"        // ⚠️ le numéro affiché aux traiteurs est
+                                 // maintenant écrit en dur dans
+                                 // pour-les-traiteurs.html. Si tu le changes,
+                                 // change-le aux deux endroits.
 };
 
 // L'entreprise vient du lien : …/?s=yas, …/?s=orange. Un seul déploiement sert
@@ -829,33 +610,22 @@ try { if(CONFIG.marque) document.getElementById("sig").textContent = CONFIG.marq
     });
   }
 
+  // Le domaine nu s'adresse aux traiteurs ; cette page-ci s'adresse aux
+  // employés. Les deux ne peuvent pas partager un titre, une description et
+  // une image de partage : collé à un traiteur, « choisis ton plat du jour »
+  // lui dit que le produit n'est pas pour lui. D'où deux pages, et un renvoi.
+  //
+  // « replace » et non « href » : l'adresse nue ne doit pas s'empiler dans
+  // l'historique, sinon le bouton « retour » ramène ici et renvoie encore.
   function accueil(){
-    $("when").textContent = "";
-    $("brand").textContent = CONFIG.marque || "Commander";
-    document.title = (CONFIG.marque || "Commander") + " — le déjeuner au bureau";
-    var num = String(CONFIG.contact || "").replace(/\D/g,"");
-    if(num){
-      // Deux entrées pour la même conversation : une tout de suite, sous le
-      // titre, pour celui qui a déjà compris ; une au bout de l'argumentaire,
-      // pour celui qui avait besoin de lire. Un seul des deux porte l'aplat
-      // d'accent — la charte n'en autorise qu'un par écran.
-      var lien = "https://wa.me/" + num + "?text=" + encodeURIComponent(
-        "Bonjour, je suis traiteur et je voudrais voir ce que Lekk bi donnerait chez moi.");
-      ["acc-contact", "acc-contact2"].forEach(function(id){ $(id).href = lien; });
-      $("acc-contact").hidden = false;
-      $("acc-note").hidden = false;
-      $("acc-traiteur").hidden = false;
-    }
-    $("acc-suivi").addEventListener("click", function(){ location.href = "suivi.html"; });
-    ecran("accueil");
+    location.replace("pour-les-traiteurs.html");
   }
 
   function ecran(n){
-    ["accueil","who","order","ok","deja","pay","fin","ferme"].forEach(function(k){ $("s-"+k).hidden = (k !== n); });
+    ["who","order","ok","deja","pay","fin","ferme"].forEach(function(k){ $("s-"+k).hidden = (k !== n); });
     // le pied fixe recouvre le bas de la page : on réserve la place, et
     // seulement sur l'écran qui le porte
     document.body.classList.toggle("commande", n === "order");
-    document.body.classList.toggle("vitrine", n === "accueil");
     // la hauteur réelle du pied : le bouton et le total peuvent passer à deux
     // lignes selon le libellé. Mesurer vaut mieux que deviner.
     if(n === "order") setTimeout(function(){

@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lekk bi — qui a commandé, qui a payé, qui te doit encore</title>
+<meta name="description" content="L'outil des traiteurs qui servent les bureaux. Ton menu, les commandes par entreprise et les règlements dans une seule page. Tes clients n'installent rien et ne créent pas de compte.">
+<link rel="canonical" href="https://lekkbi.com/pour-les-traiteurs.html">
+
+<!-- Ces balises-ci s'adressent au traiteur. Celles de la page de commande
+     s'adressent à l'employé, et c'est pour ça que les deux pages sont
+     séparées : collé à un traiteur, « choisis ton plat du jour » lui dit que
+     le produit n'est pas pour lui, et il ne clique pas. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lekk bi">
+<meta property="og:title" content="Qui a commandé, qui a payé, qui te doit encore">
+<meta property="og:description" content="L'outil des traiteurs qui servent les bureaux. Tes clients commandent depuis le groupe WhatsApp ; toi, tu ouvres une page et tout y est.">
+<meta property="og:locale" content="fr_SN">
+<meta property="og:url" content="https://lekkbi.com/pour-les-traiteurs.html">
+<meta property="og:image" content="https://lekkbi.com/vitrine/apercu-traiteurs.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Lekk bi — qui a commandé, qui a payé, qui te doit encore.">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preload" href="polices/karla.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="marque/icone-192.png">
+<link rel="apple-touch-icon" href="marque/icone-180.png">
+<style>
+@font-face{font-family:"Karla";src:url("polices/karla.woff2") format("woff2");
+  font-weight:200 800;font-display:swap}
+
+:root{
+  --paper:#FAF7F2; --surface:#FFFFFF; --surface-2:#F2EDE5; --surface-3:#E9E2D7;
+  --line:#E3DACE; --line-strong:#C9BCA9;
+  --ink:#241C18; --ink-2:#5A4C43; --ink-3:#8B7B6E;
+  --accent:#A3123C; --accent-soft:#F7E3E9; --on-accent:#FFFFFF;
+  --good:#1F6B4A; --good-soft:#E2F0E9;
+  --warn:#9A5B06; --warn-soft:#FBEBD5;
+  --display:"Karla",ui-sans-serif,system-ui,sans-serif;
+  --body:"Karla",ui-sans-serif,system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#15120F; --surface:#1E1A16; --surface-2:#272119; --surface-3:#322A21;
+  --line:#352D24; --line-strong:#4B4035;
+  --ink:#F3EDE5; --ink-2:#C3B6A8; --ink-3:#95877A;
+  --accent:#F2456F; --accent-soft:#3A1722; --on-accent:#1B0A11;
+  --good:#6FCFA2; --good-soft:#12291F;
+  --warn:#E5A851; --warn-soft:#2E2113;
+  color-scheme:dark;
+}}
+
+:root{
+  /* Une échelle d'espacement, et rien en dehors. Les marges choisies au
+     jugé — 26 ici, 22 là, 18 plus bas — sont la raison pour laquelle une
+     page se lit « pas finie » sans qu'on sache dire pourquoi. */
+  --e1:4px; --e2:8px; --e3:12px; --e4:16px; --e5:24px;
+  --e6:32px; --e7:48px; --e8:64px; --e9:96px;
+  /* L'air entre deux sections suit la largeur : serré sur un téléphone,
+     large sur un bureau, sans palier intermédiaire à choisir. */
+  --section:clamp(56px, 8.5vw, 112px);
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--body);font-size:16px;line-height:1.55;
+  font-synthesis-weight:none;text-rendering:optimizeLegibility}
+
+/* Tout ce qui réagit au doigt ou au curseur le fait en 150 ms. En dessous on
+   ne le perçoit pas, au-dessus ça traîne. Rien d'autre ne bouge sur la page
+   que la jauge. */
+a,button{transition:color .15s ease,background-color .15s ease,border-color .15s ease}
+@media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+
+.wrap{width:100%;max-width:1060px;margin-inline:auto;padding-inline:var(--e4)}
+@media (min-width:720px){ .wrap{padding-inline:var(--e6)} }
+
+.sur{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);margin:0}
+
+/* ── La barre du haut ─────────────────────────────────────────────────── */
+.barre{border-bottom:1px solid var(--line)}
+.barre-in{display:flex;align-items:center;justify-content:space-between;gap:var(--e4);
+  padding-block:var(--e4)}
+.barre .logo{display:block;width:104px;height:auto}
+.barre nav{display:flex;align-items:center;gap:var(--e2)}
+.barre nav a{font-size:14px;color:var(--ink-2);text-decoration:none;padding:var(--e2)}
+.barre nav a:hover{color:var(--ink)}
+.barre nav a.demo{color:var(--accent);font-weight:600;border:1.5px solid var(--accent);
+  border-radius:8px;padding:var(--e2) var(--e3)}
+.barre nav a.demo:hover{background:var(--accent-soft)}
+@media (max-width:479px){ .barre nav a:not(.demo){display:none} }
+
+/* ── Le hero ──────────────────────────────────────────────────────────── */
+.hero{display:grid;gap:var(--e7);padding-block:var(--section) 0;align-items:start}
+@media (min-width:860px){
+  .hero{grid-template-columns:minmax(0,1fr) 400px;gap:var(--e9);align-items:center}
+}
+
+/* Le titre coule au lieu de sauter. Deux bornes, pas de palier entre les
+   deux : 32 px pour que la phrase tienne sur un petit téléphone, 56 px pour
+   qu'elle tienne la page sur un écran large. */
+h1{font-size:clamp(32px, 1.3rem + 3.6vw, 56px);line-height:1.04;font-weight:800;
+  letter-spacing:-.028em;margin:var(--e3) 0 var(--e5);max-width:14ch}
+.lead{font-size:clamp(16px, .95rem + .35vw, 20px);color:var(--ink-2);
+  margin:0 0 var(--e6);max-width:48ch}
+
+.actions{display:flex;flex-wrap:wrap;gap:var(--e3)}
+.btn{display:inline-block;border:1.5px solid var(--accent);border-radius:10px;
+  background:var(--accent);color:var(--on-accent);font-family:var(--display);
+  font-weight:600;font-size:16px;padding:14px var(--e6);text-decoration:none;
+  text-align:center;cursor:pointer}
+.btn:hover{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.btn.creux{background:none;color:var(--ink-2);border-color:var(--line-strong);font-weight:500}
+.btn.creux:hover{color:var(--ink);border-color:var(--ink)}
+.btn:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+@media (max-width:420px){ .actions{display:block} .btn{display:block;width:100%}
+  .btn+.btn{margin-top:var(--e3)} }
+
+.apres{font-size:12px;color:var(--ink-3);margin:var(--e3) 0 0}
+
+/* Trois faits, et pas trois icônes : la charte n'a pas d'iconographie. Ce
+   qui sépare, c'est le filet. */
+.faits{list-style:none;margin:var(--e7) 0 0;padding:0}
+.faits li{padding:var(--e3) 0;border-top:1px solid var(--line)}
+.faits b{display:block;font-size:14px;font-weight:700}
+.faits span{display:block;font-size:12px;color:var(--ink-3);margin-top:2px}
+@media (min-width:560px){
+  .faits{display:grid;grid-template-columns:repeat(3,1fr);gap:0 var(--e5)}
+}
+
+/* ── L'écran, tenu par un filet. Pas d'ombre : rien ne flotte. ─────────── */
+.ecran{margin:0}
+.ecran img{display:block;width:100%;height:auto;border:1px solid var(--line-strong);
+  border-radius:14px;background:var(--surface)}
+.ecran figcaption{font-size:12px;color:var(--ink-3);margin-top:var(--e3);text-align:center}
+.ecran a{color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
+.ecran a:hover{color:var(--ink)}
+
+/* ── Les blocs qui suivent ────────────────────────────────────────────── */
+.bloc{padding-block:var(--section) 0}
+.bloc > .sur{margin-bottom:var(--e5)}
+h2{font-size:22px;font-weight:800;letter-spacing:-.015em;margin:0 0 var(--e4)}
+
+/* Le registre. Des filets et des chiffres alignés : la grammaire de la
+   marque appliquée à ce qu'elle vend. */
+.registre{max-width:640px}
+.ex{font-size:12px;letter-spacing:0;text-transform:none;color:var(--ink-3);
+  border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:var(--e2);
+  font-weight:500}
+.jauge-ligne{display:flex;align-items:center;gap:var(--e5);margin-bottom:var(--e6)}
+.somme{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.somme-leg{font-size:14px;color:var(--ink-2);margin-top:var(--e1);line-height:1.4}
+.reg-l{display:flex;align-items:baseline;justify-content:space-between;gap:var(--e3);
+  padding:var(--e3) 0;border-top:1px solid var(--line)}
+.reg-l span{font-size:16px}
+.reg-l b{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.reg-pied{font-size:12px;color:var(--ink-3);margin:0;padding-top:var(--e4);
+  border-top:1.5px solid var(--line-strong)}
+
+/* Le signe au travail : il porte la part réellement rentrée, comme en tête
+   de l'onglet « Encaissé ». Au-dessus de 48 px l'anneau passe au tertiaire,
+   sinon il se fond dans le liquide. */
+.jv{width:96px;height:96px;flex:none;display:block}
+.jv .anneau{fill:none;stroke:var(--ink-3)}
+.jv .liquide{fill:var(--accent)}
+@keyframes monte{from{transform:translateY(57px)}to{transform:translateY(0)}}
+.jv .liquide{animation:monte 1.15s cubic-bezier(.22,.61,.36,1) .35s both}
+@media (prefers-reduced-motion:reduce){ .jv .liquide{animation:none} }
+
+/* Les trois étapes. Le numéro est cerclé d'un filet, pas d'une pastille
+   pleine : l'aplat d'accent est réservé aux deux boutons. */
+.etapes ol{list-style:none;counter-reset:e;margin:0;padding:0;display:grid;
+  gap:0;grid-template-columns:1fr}
+@media (min-width:720px){ .etapes ol{grid-template-columns:repeat(3,1fr);gap:0 var(--e7)} }
+.etapes li{counter-increment:e;padding:var(--e5) 0;border-top:1px solid var(--line)}
+@media (min-width:720px){ .etapes li{border-top:1.5px solid var(--line-strong)} }
+.etapes li::before{content:counter(e);display:grid;place-items:center;
+  width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line-strong);
+  font-size:14px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums;
+  margin-bottom:var(--e3)}
+.etapes b{display:block;font-size:18px;margin-bottom:var(--e2)}
+.etapes p{font-size:14px;color:var(--ink-2);margin:0;line-height:1.55}
+
+.args{display:grid;gap:0;max-width:720px}
+@media (min-width:720px){ .args{grid-template-columns:1fr 1fr;gap:0 var(--e7);max-width:none} }
+.arg{padding:var(--e5) 0;border-top:1px solid var(--line)}
+.arg p{font-size:14px;color:var(--ink-2);margin:var(--e2) 0 0;line-height:1.55;max-width:46ch}
+
+/* ── La fin ───────────────────────────────────────────────────────────── */
+.final{padding-block:var(--section);margin-top:var(--section);
+  border-top:1.5px solid var(--line-strong)}
+.final h2{font-size:28px;max-width:20ch}
+.final p{color:var(--ink-2);margin:0 0 var(--e6);max-width:52ch}
+.perdu{font-size:12px;color:var(--ink-3);line-height:1.6;margin:var(--e7) 0 0;
+  padding-top:var(--e5);border-top:1px solid var(--line);max-width:60ch}
+.perdu a{color:var(--accent);text-decoration:none;font-weight:600}
+.perdu a:hover{color:var(--ink)}
+.perdu code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+  background:var(--surface-2);border-radius:4px;padding:1px 5px}
+
+footer{border-top:1px solid var(--line);padding-block:var(--e6) var(--e8);
+  font-size:12px;color:var(--ink-3)}
+footer .ft{display:flex;flex-wrap:wrap;gap:var(--e4);justify-content:space-between}
+footer a{color:var(--ink-2);text-decoration:none}
+footer a:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<header class="barre">
+  <div class="wrap barre-in">
+    <a href="./pour-les-traiteurs.html" aria-label="Lekk bi, accueil"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2733 845" role="img" aria-label="Lekk bi"><g transform="translate(40,793) scale(1,-1)"><path fill="var(--logo-ink,#241C18)" d="M189 -5Q152 -5 121.0 10.0Q90 25 71.0 56.5Q52 88 52 141V681H197V193Q197 156 210.5 145.5Q224 135 245 135V0Q235 -2 218.5 -3.5Q202 -5 189 -5ZM538 -9Q465 -9 409.5 22.0Q354 53 323.5 110.0Q293 167 293 244Q293 320 323.5 378.0Q354 436 409.5 468.5Q465 501 538 501Q613 501 668.0 467.0Q723 433 753.0 375.5Q783 318 783 246Q783 233 782.0 221.0Q781 209 780 202H407V306H668L651 263Q651 318 623.5 353.0Q596 388 539 388Q488 388 457.5 357.0Q427 326 427 275V220Q427 165 458.5 134.5Q490 104 546 104Q593 104 620.5 123.0Q648 142 667 170L766 115Q734 56 676.0 23.5Q618 -9 538 -9ZM957 246V265L1157 489H1321L1099 238L1095 286L1326 0H1156ZM856 681H1001V0H856ZM1469 246V265L1669 489H1833L1611 238L1607 286L1838 0H1668ZM1368 681H1513V0H1368Z"/><path fill="var(--logo-accent,#A3123C)" d="M2151 -12Q2087 -12 2039.0 19.5Q1991 51 1964.5 108.5Q1938 166 1938 245Q1938 328 1964.0 385.0Q1990 442 2037.5 471.5Q2085 501 2150 501Q2216 501 2267.0 468.5Q2318 436 2347.0 378.0Q2376 320 2376 245Q2376 170 2347.5 111.5Q2319 53 2268.5 20.5Q2218 -12 2151 -12ZM1880 0V681H2026V353H2017V125H2026L1989 0ZM2123 125Q2168 125 2197.5 158.5Q2227 192 2227 245Q2227 297 2197.5 330.5Q2168 364 2123 364Q2079 364 2049.0 330.5Q2019 297 2019 245Q2019 192 2049.0 158.5Q2079 125 2123 125ZM2599 0H2453V489H2599Z"/><circle fill="var(--logo-accent,#A3123C)" cx="2526.0" cy="652.8" r="99.8"/></g></svg></a>
+    <nav>
+      <a href="#marche">Comment ça marche</a>
+      <a class="demo" href="suivi.html?demo">Voir la démo</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap hero">
+    <div>
+      <p class="sur">Pour les traiteurs</p>
+      <h1>Qui a commandé, qui a payé, qui te doit encore</h1>
+      <p class="lead">Ton groupe WhatsApp ne change pas. Tes clients commandent comme
+        avant — mais au lieu de recompter des messages, tu ouvres une page et tout y est.</p>
+
+      <div class="actions">
+        <a class="btn" href="suivi.html?demo">Voir la démo</a>
+        <a class="btn creux" href="https://wa.me/221781587748?text=Bonjour%2C%20je%20suis%20traiteur%20et%20je%20voudrais%20voir%20ce%20que%20Lekk%20bi%20donnerait%20chez%20moi.">En parler sur WhatsApp</a>
+      </div>
+      <p class="apres">La démo est une journée d'exemple : tu peux tout toucher,
+        rien n'est enregistré.</p>
+
+      <ul class="faits">
+        <li><b>Rien à installer</b><span>Une page web. Ni application, ni mise à jour.</span></li>
+        <li><b>Prêt en dix minutes</b><span>Ton menu, tes entreprises, tes horaires.</span></li>
+        <li><b>Pas de compte pour tes clients</b><span>Ils cliquent sur le lien du groupe.</span></li>
+      </ul>
+    </div>
+
+    <figure class="ecran">
+      <picture>
+        <source media="(max-width:719px)" srcset="vitrine/ecran-mobile.png" width="760" height="760">
+        <img src="vitrine/ecran-traiteur.png" width="760" height="1440" decoding="async"
+             alt="L'écran du traiteur : pour chaque plat la quantité à préparer, et sous
+                  chaque plat les noms, avec un disque qui dit qui a déjà réglé.">
+      </picture>
+      <figcaption>Ce que tu vois à la clôture. <a href="suivi.html?demo">Ouvre-le →</a></figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap bloc">
+    <div class="registre">
+      <p class="sur">Et côté argent, le même jour <span class="ex">exemple</span></p>
+      <div class="jauge-ligne">
+        <svg class="jv" viewBox="0 0 100 100" aria-hidden="true">
+          <defs><clipPath id="jvd"><circle cx="50" cy="50" r="42.10"/></clipPath></defs>
+          <circle class="anneau" cx="50" cy="50" r="45.75" stroke-width="8.5"/>
+          <g clip-path="url(#jvd)"><path class="liquide" d="M-10.00,41.41L-8.00,41.71L-6.00,41.95L-4.00,42.14L-2.00,42.27L0.00,42.33L2.00,42.34L4.00,42.28L6.00,42.18L8.00,42.02L10.00,41.83L12.00,41.60L14.00,41.34L16.00,41.06L18.00,40.78L20.00,40.49L22.00,40.21L24.00,39.94L26.00,39.69L28.00,39.47L30.00,39.27L32.00,39.11L34.00,38.98L36.00,38.88L38.00,38.80L40.00,38.76L42.00,38.74L44.00,38.74L46.00,38.74L48.00,38.76L50.00,38.77L52.00,38.77L54.00,38.76L56.00,38.73L58.00,38.67L60.00,38.58L62.00,38.46L64.00,38.30L66.00,38.10L68.00,37.87L70.00,37.61L72.00,37.31L74.00,36.99L76.00,36.66L78.00,36.31L80.00,35.96L82.00,35.61L84.00,35.28L86.00,34.97L88.00,34.70L90.00,34.46L92.00,34.27L94.00,34.13L96.00,34.05L98.00,34.04L100.00,34.08L102.00,34.19L104.00,34.36L106.00,34.58L108.00,34.87L110.00,35.20L110.00,200.00L-10.00,200.00Z"/></g>
+        </svg>
+        <div>
+          <div class="somme">89 000 F</div>
+          <div class="somme-leg">rentrés sur 132 000 — le disque se remplit à mesure</div>
+        </div>
+      </div>
+      <div class="reg-l"><span>Thiéboudiène</span><b>27</b></div>
+      <div class="reg-l"><span>Lasagnes</span><b>12</b></div>
+      <div class="reg-l"><span>Jus bissap</span><b>9</b></div>
+      <p class="reg-pied">Chaque règlement se coche quand il arrive. Tu vois qui a payé,
+        qui te doit encore — <b>même si c'était un autre jour</b>.</p>
+    </div>
+  </section>
+
+  <section class="wrap bloc etapes" id="marche">
+    <p class="sur">Comment ça marche</p>
+    <ol>
+      <li><b>Tu écris ton menu</b>
+        <p>Une fois pour la semaine. Chaque entreprise garde son lien, son heure de
+          clôture, ses prix.</p></li>
+      <li><b>Tes clients commandent</b>
+        <p>Ils cliquent sur le lien dans le groupe, choisissent, c'est fini. Ceux qui
+          préfèrent t'appeler, tu les ajoutes toi-même.</p></li>
+      <li><b>Tu prépares, et tu suis</b>
+        <p>Les quantités par plat et par entreprise, les noms dessous, et qui a réglé.
+          Sur ton téléphone.</p></li>
+    </ol>
+  </section>
+
+  <section class="wrap bloc">
+    <p class="sur">Ce qu'il faut savoir</p>
+    <div class="args">
+      <div class="arg">
+        <h2>Ce que ça remplace</h2>
+        <p>Le sondage WhatsApp qu'on recompte à la main, le carnet où on note qui doit
+          encore, et les messages « c'est bien toi qui as payé mardi ? ».</p>
+      </div>
+      <div class="arg">
+        <h2>Ce que ça ne fait pas</h2>
+        <p>Lekk bi ne touche pas à l'argent. Tes clients payent sur <b>ton</b> numéro,
+          comme aujourd'hui. L'application note, elle n'encaisse pas.</p>
+      </div>
+      <div class="arg">
+        <h2>Ce que ça coûte</h2>
+        <p>Un abonnement, payé par toi — jamais par tes clients. Le prix n'est pas encore
+          fixé : parlons-en, c'est aussi comme ça qu'il se fixera.</p>
+      </div>
+      <div class="arg">
+        <h2>Et si tu arrêtes</h2>
+        <p>Tes clients retournent au groupe WhatsApp, qui n'a pas bougé. Tu n'as rien
+          installé chez eux, donc il n'y a rien à désinstaller.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap final">
+    <h2>Montre-moi comment tu fais aujourd'hui</h2>
+    <p>Ton menu, ton groupe, ta façon de compter. Je te dis en dix minutes si ça te fait
+      gagner quelque chose. Si la réponse est non, je te le dirai aussi.</p>
+    <div class="actions">
+      <a class="btn" href="https://wa.me/221781587748?text=Bonjour%2C%20je%20suis%20traiteur%20et%20je%20voudrais%20voir%20ce%20que%20Lekk%20bi%20donnerait%20chez%20moi.">En parler sur WhatsApp</a>
+      <a class="btn creux" href="suivi.html?demo">Revoir la démo</a>
+    </div>
+
+    <p class="perdu">Tu travailles dans une entreprise servie et tu cherches à commander ?
+      Il te faut le lien de <b>ton</b> entreprise — il ressemble à <code>lekkbi.com/?s=yas</code>
+      et se trouve dans le groupe WhatsApp où passe le menu. Pour voir à quoi ça ressemble,
+      <a href="./?s=demo">la démonstration est par ici</a>.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap ft">
+    <span>Lekk bi — le registre du déjeuner.</span>
+    <span><a href="suivi.html">J'ai un compte traiteur</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -87,6 +87,17 @@ apparition au défilement, ni compteur qui s'incrémente.
 Dans le produit, le signe ne bouge jamais : il porte un état, et un état qui
 s'anime se lit comme un chargement.
 
+**Une seule autre chose a le droit de bouger : ce qui répond au doigt.** Un lien,
+un bouton, un onglet changent de couleur en **150 ms**. En dessous on ne le
+perçoit pas ; au-dessus ça traîne et l'interface paraît molle. Ça ne concerne que
+`color`, `background-color` et `border-color` — jamais la position, jamais la
+taille, jamais l'opacité d'un bloc entier.
+
+Ce qui reste interdit, et nommément : les apparitions au défilement. C'est
+l'effet le moins cher du web, il contredit la grammaire d'imprimé — une page
+n'apparaît pas, elle est là — et sur une connexion lente il donne une page qui
+saccade au lieu d'une page qui se lit.
+
 `prefers-reduced-motion: reduce` supprime l'animation — le disque est alors à
 son niveau dès la première image. Désactiver veut dire immobile, pas invisible.
 
@@ -231,6 +242,12 @@ ou n'est pas là :
 Sans cette règle, un plat coché, un compteur et le bouton « payer » portent le
 même rouge, et le bouton n'a plus rien contre quoi ressortir.
 
+**Sur une page qui défile, « par écran » se compte par hauteur d'écran.** La
+règle existe pour que le bouton principal ait quelque chose contre quoi
+ressortir ; deux aplats qu'on ne peut pas voir en même temps ne se concurrencent
+pas. La vitrine porte donc deux boutons pleins — un sous le titre, un à la fin —
+et rien entre les deux.
+
 **Le signe fait exception.** La jauge porte l'accent en aplat, à toutes les
 tailles et autant de fois qu'il le faut : sa couleur est l'information, pas une
 décoration. C'est justement parce qu'elle prend l'état en charge que le reste
@@ -260,13 +277,25 @@ police n'est pas embarquée dans les pages.
 | 18 | noms de plats, titres de section |
 | 22 | titres d'écran |
 | 28 | totaux |
-| 40 | **titre de vitrine — cette page-là seulement** |
+| 32 → 56 | **titre de vitrine — fluide, cette page-là seulement** |
 
-Le septième palier n'appartient pas à l'interface. Sur la vitrine, quelqu'un
-découvre le produit sans contexte, sur son téléphone, en dix secondes : quand le
-plus gros corps disponible vaut un total, aucun titre ne peut dominer et la page
-se lit comme un paragraphe de conditions générales. 40 px ne sert qu'au titre de
-cette page. Il n'entre dans aucun écran du produit.
+Le septième n'appartient pas à l'interface, et il n'est pas un palier : c'est une
+**plage**. Sur la vitrine, quelqu'un découvre le produit sans contexte, sur son
+téléphone, en dix secondes — et quand le plus gros corps disponible vaut un
+total, aucun titre ne peut dominer : la page se lit comme un paragraphe de
+conditions générales.
+
+Deux valeurs y coulent avec la largeur, bornées des deux côtés :
+
+| Élément | Plage | Formule |
+|---|---|---|
+| Titre de vitrine | 32 → 56 px | `clamp(32px, 1.3rem + 3.6vw, 56px)` |
+| Ligne d'accroche | 16 → 20 px | `clamp(16px, .95rem + .35vw, 20px)` |
+
+32 px pour que la phrase tienne sur un petit téléphone, 56 px pour qu'elle tienne
+la page sur un écran large. **Rien d'autre ne coule** : le reste de la vitrine,
+et la totalité du produit, restent sur les six paliers. Une échelle fluide
+partout, c'est une échelle qu'on ne peut plus vérifier.
 
 Les champs de saisie ne descendent jamais sous 16 px : en dessous, Safari iOS
 zoome la page à chaque fois qu'on les touche. La règle qui l'impose doit rester
